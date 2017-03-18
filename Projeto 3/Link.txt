@@ -1,0 +1,5 @@
+Link: https://mapzen.com/data/metro-extracts/metro/sao-paulo_brazil/
+Base de dados utilizada: OSM XML
+Motivo: Facilidade de obtenção e tamanho do arquivo
+
+Eu não reduzi a região, mas sim analisei ela por completo.
