@@ -1,0 +1,7 @@
+Projeto realizado durante o curso de análise de dados da Udacity
+O projeto pede uso de uma base de dados do OpenStreetMap e o uso de banco de dados NoSQL
+Os dados são extraídos de xml file e devem ser auditados e corrigidos antes de serem carregados para o MongoDB
+Data Wrangler e Data Cleaning são as primeiras etapas
+Como OpensStreetMap pode ser modificado por qualquer pessoa, existe falta de padrão de preenchimento das informações e erros de digitação
+O MongoDB permite consulta rápida a dados não estruturados com desempenho superior as bancos de dados tradicionais
+A base de dados inicial possuem aproximadamente 12,5 milhões de linhas de dados em formato xml
