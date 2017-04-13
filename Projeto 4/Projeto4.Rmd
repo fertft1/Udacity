@@ -10,8 +10,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Bibliotecas
-```{r bibliotecas, echo=FALSE}
+```{r bibliotecas, echo=FALSE, message=FALSE}
 library(ggplot2)
 library(scales)
 library(base)
@@ -30,10 +29,12 @@ O trabalho foca nos principais candidatos e na origem das suas doacoes para ente
 
 #Importacao dos dados
 Nomes de colunas sÃ£o gerados de forma automÃ¡tica.
-```{r importacao, echo=FALSE}
+```{r importacao echo = FALSE, results = 'asis'}
 unzip("P00000001-CA.zip","P00000001-CA.csv")
-dados <- read.csv("P00000001-CA.csv",header = TRUE, sep = ",", row.names = NULL)
-head(dados)
+dados <- read.csv("P00000001-CA.csv", header = TRUE, sep = ",",
+                  row.names = NULL)
+
+knitr::kable(head(dados),caption = "Amostra dos dados")
 ```
 Vemos que a importacao esta com as colunas deslocadas, como exemplo vemos que o estado estao com o zip code, estes campos devem ser corrigidos.
 
@@ -41,14 +42,14 @@ Os campos election_tp,tran_id,form_tp sao campos de controle de fluxo de informa
 
 #Corrigindo a posicao das colunas
 Corrigindo a posicao das colunas e retirando os campos que nao serao utilizados.
-```{r, echo=FALSE}
+```{r echo = FALSE, results = 'asis'}
 #mudar nomes das colunas deslocando as posicoes de p para p-1 e adicionando o campo "xx" pq vai existir um campo sem nome
-colnames(dados)= c(colnames(dados)[-1],"xx")
+colnames(dados)= c(colnames(dados)[-1], "xx")
 
 #retirar campos que nao serao utilizados
-dados <- subset(dados,select = c(-election_tp,-tran_id,-form_tp,-file_num,-xx))
-
-head(dados)
+dados <- subset(dados, select = c(-election_tp, -tran_id, -form_tp,
+                                  -file_num, -xx))
+knitr::kable(head(dados), caption = "Amostra com colunas corrigidas")
 ```
 Agora os campos estao corretos para iniciar a analise.
 
@@ -61,7 +62,7 @@ Podemos que 3 tipos de variaveis:
 
 ##Caracteristicas do Data set
 Quantidade de colunas e de observacoes.
-```{r, echo=FALSE}
+```{r, echo = FALSE}
 #Quantidade de variaveis
 length(dados)
 #Quantidade de linhas
@@ -71,55 +72,74 @@ length(dados$cmte_id)
 ##Valores negativos
 Aqui e nas proximas analises os valores **negativos** serao desconsiderados. Como nao existe documentacao explicando a causa desses valores serem negativos nao temos um tratamento adequado para correcao destes, entao usamos a solucao trivial que e descarta-los.
 ```{r,echo=FALSE}
-table(cut(subset(dados, contb_receipt_amt < 0)$contb_receipt_amt, breaks = c(-10000,-5000,-1000,-500,-100,0)))
+table(cut(subset(dados, contb_receipt_amt < 0)$contb_receipt_amt,
+                        breaks = c(-10000,-5000,-1000,-500,-100,0)))
 
-paste( "Quantidade de valores negativos: ",length(subset(dados, contb_receipt_amt < 0)$contb_receipt_amt))
+paste( "Quantidade de valores negativos: ",
+       length(subset(dados, contb_receipt_amt < 0)$contb_receipt_amt))
 ```
 
 
+```{r,echo=FALSE}
+
+#Conversão para Data
+dados$contb_receipt_dt <- as.Date(dados$contb_receipt_dt,format = "%d-%b-%y")
+
+```
+
 ###Analise de quartil
+Como primeiro passo para criar familiaridade com os dados vou utilizar uma analise de quartil.
 Vemos que 75% das contribuicoes ocorrem ate $99.
 ```{r,echo=FALSE}
 quantile(subset(dados, contb_receipt_amt >= 0)$contb_receipt_amt)
 ```
 
-Uma nova analise com mais intervalos (abaixo) e comecando a partir de 75% temos que **95%** das doacoes chegam no maxximo a $400 e esse valor pode ser utilizado como limite nas visualizacoes futuras para facilitar o entendimento do grafico.
+Uma nova analise com mais intervalos e comecando a partir de 75% temos que **95%** das doacoes chegam no maximo a $400 e esse valor pode ser utilizado como limite nas visualizacoes futuras para facilitar o entendimento dos proximos graficos.
 ```{r,echo=FALSE}
-quantile(subset(dados, contb_receipt_amt >= 0)$contb_receipt_amt, probs = seq(.75,1,0.05))
+quantile(subset(dados, contb_receipt_amt >= 0)$contb_receipt_amt,
+         probs = seq(.75,1,0.05))
 ```
 
 ##Distribuicao das contribuicoes
-Usando o limite de **$400** e criando um histograma vemos que a maioria das doacoes se encontram dentro de um pequeno intervalo de **0-100** dólares. Como os dados estao muito proximos uma transformacao de coordenadas pode ser util.
+Usando o limite de **$400** encontrado anteriomente e criando um histograma vemos que a maioria das doacoes se encontram dentro de um pequeno intervalo de **0-100** dólares. 
+
+Como os dados estao muito proximos, transformacao de coordenadas podemos tentar uma transformacao de escala para facilitar a visao.
 ```{r,echo=FALSE}
-ggplot(data = subset(dados, contb_receipt_amt >= 0 & contb_receipt_amt <= 400 ), aes(x = contb_receipt_amt))+
+ggplot(data = subset(dados, contb_receipt_amt >= 0 & contb_receipt_amt <= 400 ),
+       aes(x = contb_receipt_amt))+
   geom_histogram(color = "red", binwidth = 25)
 ```
 
-##Distribuicaoo das contribuicoes - Log10
-Transformando a escala para **log10** temos uma distribuicao que mostra como os valores das doacoes sao concentrados e podemos visualizar 100% dos dados (anterior foi restrita a $400). Podemos ver que uma quantidade de significativa de contribuicoes ocorre ate **1300** dolares o que nos deixa da um intervalo de trabalho para as proximas analises e deixa os demais valores como **outliers**.
+###Distribuicaoo das contribuicoes - Log10
+Transformando a escala para **log10** temos uma distribuicao que mostra como os valores das doacoes sao concentrados e podemos visualizar 100% dos dados (anterior foi restrita a $400). Podemos ver que uma quantidade de significativa de contribuicoes ocorre ate **1300** dolares, sendo este um valor mais interessante para usarmos como filtro nos proximos graficos e deixa os valores superiores como **outliers**.
 ```{r transformando Log10,echo=FALSE}
-ggplot(data = subset(dados, contb_receipt_amt > 0 ), aes(x = contb_receipt_amt))+
+ggplot(data = subset(dados, contb_receipt_amt > 0 ), 
+       aes(x = contb_receipt_amt))+
   geom_histogram(color = "red", binwidth = 0.3)+
   scale_x_log10()+
   ggtitle("Log10()")+
   xlab("Contribuicao[$]")
 ```
 
-##Quem mais recebeu doacoes (em quantidade)
-Agora que ja entendemos a distribuicao das doacoes e nos familiarzamos com os dados, podemos analisar para onde estas estao sendo direcionadas.
+##Destinos das doacoes e distribuicao das doacoes no tempo
+Agora que ja entendemos a distribuicao das doacoes e nos familiarzamos com os dados, podemos analisar para onde estas sendo direcionadas as doacoes e como ocorre ao longo do dos dias.
 
-Vemos que Clinton, Hillary Rodham recebeu a maioria das doacoes quando olhamos em quantidade de doadores, seguida por Sanders, Bernard e Trump, Donald J.
+###Destino das doacoes
+Analisando o destino das doacoes vemos que Clinton, Hillary Rodham recebeu a maioria das doacoes quando olhamos em quantidade de doadores, seguida por Sanders, Bernard e Trump, Donald J. e que após este último, a quantidade de doacoes cai rapidamente para os demais candidatos.
 ```{r,echo=FALSE}
-ordem <- sort(table(subset(dados,!is.na(cand_nm))$cand_nm),decreasing = TRUE)
+ordem <- sort(table(subset(dados, !is.na(cand_nm))$cand_nm), decreasing = TRUE)
 ordem
 
 #Mudando a ordem seguindo o resultado da tabela
-dados$cand_nm <- factor(dados$cand_nm,levels =  names(ordem))
+dados$cand_nm <- factor(dados$cand_nm,levels = names(ordem))
 ```
 
 ##Visualizando a tabela anterior
+Criando um histograma da tabela anterior vemos os candidatos expressivos no estado da California.
 Vemos que na California a quantidade de doadores foi muito superior para Hillary Clinton e Bernard Sanders que possuem caracteristicas politicas proximas, sendo Hillary de centro e Sanders algo mais proximo com a esquerda.
-Os candidatos expressivos no estado da California ficam bem visiveis no histograma de doacoes.
+
+Poderiamos utilizar somente os dois primeiros candidatos para as proximas analises devido a sua representatividade, mas como representam visoes politicas proximas a inclusao de Trump, Donald J. permite uma analise de preferencias politicas mais amplo devido a este candidato ser **republicano**.
+
 ```{r, echo=FALSE}
 ggplot(data = dados, aes(x = cand_nm))+
   geom_bar()+
@@ -128,8 +148,10 @@ ggplot(data = dados, aes(x = cand_nm))+
   ylab("Frequencia")
 ```
 
-##Doacoes no tempo
-As doacoes sao distribuidas no tempo.
+###distribuicao das doacoes no tempo
+Como analise complementar ao destino das doacoes podemos explorar como as doacoes se distribuem no tempo. Nas secoes de analise bivariada e multivariada a frequencia de doacao pode nos ajudar a entender como cada ocupacao faz sua doacao, no inicio, meio ou final da campanha.
+
+As doacoes sao distribuidas no tempo se concentram no ano de 2016 (ano de eleicao) com periodos de maior concentracao nos primeiros meses de 2016 e nos meses que antecedem o dia de votacao. Nas proximas analises com mais variaveis esta visulizacao pode ser enriquecida com dados das ocupacoes e candidatos.
 ```{r,echo=FALSE}
 ggplot(data = dados, aes(x = contb_receipt_dt))+
   geom_bar()+
@@ -137,20 +159,56 @@ ggplot(data = dados, aes(x = contb_receipt_dt))+
   ylab("Frequencia")
 ```
 
-
-#Analise Mutivariada
-
-
 ##Analisando a ocupacao dos contribuidores
 O objetivo e entender os principais contribuidores na base.
 E possivel ver nos dados abaixo que a maioria dos contribuintes para as campanhas se declaram aposentados, sendo estes maioria absoluta.
 
-A partir daqui podemos estabelecer varias analises da origem da contribuicao por candidato e como cada grupo de contribuintes concentra suas preferencias.
+A partir daqui podemos estabelecer varias analises da origem da contribuicao por candidato e periodo do ano, além de como cada grupo de contribuintes concentra suas preferencias.
 
-###Top 10 ocupacoes declaradas
+Os contribuintes serao agrupados em ocupacoes declaradas, mas devido a grande quantidade de ocupacoes iremos restringir as com maior frequencia de doacoes.
+
+###Ocupacoes ajustadas
+As 09 principais ocupacoes sao identificadas e as demais agrupadas em "Outras" e consolidando a base em 10 ocupacoes.
+
+No grafico de ocupacoes vemos que a maior ocupacao e "Outras", ou seja, a quantidade de ocupacoes declaradas e grande e quando agrupamos as ocupacoes que nao fazem parte das **9 primeiras** esse agrupamento se torna a primeira ocupacao.
+
+Interessante que em numeros de doacoes os principais sao aposentados e desempregados, talvez por serem a parte da populacao que se sente pressionada por decisoes politicas.
 ```{r, echo=FALSE}
-sort(table(with(dados,contbr_occupation)),decreasing = TRUE)[0:10]
+
+#Extrair as 10 primeiras profissoes
+aux <- sort(table(with(dados, contbr_occupation)), decreasing = TRUE)[0:9]
+
+#lista replicante de ocupacoes
+dados$profissao <- as.character(dados$contbr_occupation)
+
+#As profissoes que nao estao entre as 10 primeiras recebem o nome "Outras"
+dados$profissao[which( !(dados$contbr_occupation %in% names(aux)) )] <- "Outras"
+
+#Transformando o campo de strings em factor
+dados$profissao <- as.factor(dados$profissao)
+
+#Extraindo os 10 primeiros - vendo se existe alteracao com entrada de "Outras"
+aux <- sort(table(with(dados, profissao)), decreasing = TRUE)
+
+#Corrigindo os levels
+dados$profissao <- factor(dados$profissao, levels = names(aux))
+
+aux
+
+#Desalocando memoria
+rm(aux)
 ```
+
+```{r, echo=FALSE}
+ggplot(data = dados, aes(x=profissao))+
+    geom_bar()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+    xlab("Profissao")+
+    ylab("Frequencia")
+
+```
+
+#Analise Bivariada
 
 ##Preparacao
 Temos que pelas analises univariadas que existem 3 candidatos que possuem a maior parte das doacoes, Hillary, Senders e Trump (eleito) e varios doadores de pequenas quantias e que possuem varias profissoes, assim podemos comecar a analisar de forma bivariada a relacao entre doadores e candidatos atraves do tamanho  da doacao e da profissao.
@@ -160,43 +218,60 @@ Outras caracteristicas que podemos explorar seriam as cidades de origem das doac
 Com a analise bivariada bem estabelecida podemos nos aprofundar em relacoes multivariadas.
 
 ##Distribuicao das contribuicoes por candidato
-As doacoes possuem a mesma distribuicao. A diferenca esta na quantidade de doacoes vista no grafico abaixo que usa alpha = 1/30 para mostrar onde os dados se sobrepoem.
+Um analise simples e direta e tentar visualizar a relacao do candidato com as doacoes que ele recebeu. Isso permite verificar se existe alguma tendencia na doacoes.
+
+Pelo gráfico as doacoes possuem a mesma distribuicao. A diferenca esta na quantidade de doacoes vista no grafico abaixo que usa alpha = 1/30 para mostrar onde os dados se sobrepoem, com isso não podemos supor algum padrao.
 
 ```{r, echo=FALSE}
 #3 principais candidatos
 candidatos <- unique(sort(dados$cand_nm))[1:3]
 
-ggplot(data = subset(dados, (cand_nm == candidatos[1] | cand_nm == candidatos[2] | cand_nm == candidatos[3]) & 
-                      contb_receipt_amt >0 & contb_receipt_amt <= 4000), aes(x = cand_nm, y =contb_receipt_amt ))+
+ggplot(data = subset(dados, (cand_nm == candidatos[1] | 
+                             cand_nm == candidatos[2] |
+                             cand_nm == candidatos[3]) & 
+                      contb_receipt_amt >0 & contb_receipt_amt <= 1300),
+       aes(x = cand_nm, y = contb_receipt_amt ))+
   geom_point(alpha  = 1/30, color="black")+
   xlab("Candidato")+
   ylab("Contribuicoes[$]")
 ```
 
 ##Reduzindo quantidade de variaveis e filtrando as observacoes
-A quantidade de variáveis e os valores possiveis sao filtradas.
+Para facilitar as próximas analises, retirar os outliers e ruidos a base de dados vai ser sofrer as correcoes identificadas na secao anterior:
+>Excluidos os valores negativos
+>Maximo contribuica de **$1300** para retirar outliers
+>Utilizacao 
 
 ```{r, echo=FALSE}
 #Filtrando a base de dados para trabalhar somente com os 3 principais candidatos
 #Restringindo os valores segundo a analise anterior que a maioria dos valores se concentram até 1000, mas para evitar jogar dados fora
 #vou deixar 2000
-top3_candidatos = subset(dados, (cand_nm %in% candidatos) & contb_receipt_amt >0 & contb_receipt_amt <= 1000)
+top3_candidatos = subset(dados, (cand_nm %in% candidatos) &
+                                contb_receipt_amt > 0 & 
+                                contb_receipt_amt <= 1300)
          
 #Retirando campos de ID que não serão considerados nas analises
-top3_candidatos = subset(top3_candidatos, select = c(-cmte_id, -cand_id,-contbr_zip))
+top3_candidatos = subset(top3_candidatos,
+                         select = c(-cmte_id, -cand_id,-contbr_zip))
 
-top_ocupacoes = names(sort(table(with(dados,contbr_occupation)),decreasing = TRUE)[1:10])
-top3_candidatos = filter(top3_candidatos,contbr_occupation %in% top_ocupacoes)
-                
-head(top3_candidatos)
+top_ocupacoes = names(sort(table(with(dados,
+                                      contbr_occupation)), 
+                                      decreasing = TRUE)[1:10])
+
+#Essa linha eh devido a eu ter restringido as ocupacoes depois de ter criado os codigos abaixo
+#ela evita que eu tenha de reescrever todo codigo
+top3_candidatos$contbr_occupation = top3_candidatos$profissao
+
+knitr::kable(head(top3_candidatos), caption = "Tabela filtrada nos 3 principais candidatos")               
+
 ```
 
 ##Analisando os contribuintes por profissao declarada
-Devido a grande variacao das contribuicoes os valores foram limitados a $1000, este valor concentra quase 100% das doacoes.
+Nas visualizacoes anteriores percebemos que as doacoes se concentram em pequenos valores e que a quantidade de doacoes depende da ocupacao, agora comparando valor das doacoes com a ocupacao podemos entender como se distrbuem o valor das doacoes e se alguma ocupacao tem tendencia a fazer doacoes maiores ou menores. Esse tipo de analise pode indicar um publico que pode aumentar a arrecadacao de campanha se seus interesses forem colocados em pauta.
 
-Vemos que nao importa o contribuinte (empregado, desempregado ou que nao forneceu essa informacao) o perfil de doacao e semelhante em ambos os casos.
-
-A questao que surge e para qual candidato os contribuintes estao enviando seus recursos. Vamos analisar, por exemplo, se os desempregados tem uma preferencia em relacao aos 3 candidatos que estamos nos focando.
+###Resultado
+Vemos (gráficos abaixo) que nao importa o contribuinte o perfil de doacao e semelhante em ambos os casos, exceto para os que *nao informaram a ocupacao*, onde podemos ver que ao contrário dos demais a quantidade de doacoes dentro da faixa de $50-$100 e $100-$150 esta maior que na faixa $0-$50.
+**observacao** cada bin tem largura de $50.
 
 ```{r,echo=FALSE}
 graph_plot <-function(profissional){
@@ -204,7 +279,8 @@ graph_plot <-function(profissional){
   #profissional: corresponde a um elemento de contbr_occupation
   #Retorna um objeto de gráfico
   
-  x <- ggplot(data = subset(top3_candidatos, contbr_occupation==profissional), aes(x=contb_receipt_amt))+
+  x <- ggplot(data = subset(top3_candidatos, contbr_occupation==profissional),
+              aes(x=contb_receipt_amt))+
         geom_histogram(binwidth = 50)+
         ggtitle(profissional)+
         xlab("Contribuicao[$]")
@@ -213,20 +289,24 @@ graph_plot <-function(profissional){
 ```
 
 ```{r histogramas, echo=FALSE}
-for(i in 1:10){
-  grid.arrange(graph_plot(top_ocupacoes[i]))
+for(i in unique(top3_candidatos$profissao)){
+  grid.arrange(graph_plot(i))
 }
 ```
 #Analise multivariada
+Nas analises anteriores entendemos como as contribuicoes estao chegando nos candidatos e como os doadores estao estao enviando dinheiro de acordo com sua ocupacao. Agora atraves das analises anteriores podemos estudar a relacao candidato, ocupacao e valor da doacao, e analisar esse comportamento durante o periodo de campanha. 
 
+Algumas ocupacoes serao escolhidas para o detalhamento descrito acima.
 
 ##Doacoes de aposentados
-Temos pelo grafico que a maioria dos aposentados fez doacoes para Hillary e Sanders. 
+Como os aposentado sao o maior grupo em quantidade de doacoes, vamos o valor doado por aposentados para cada candidato.
 
+Temos pelo grafico que a maioria dos aposentados fez doacoes para Hillary e Sanders. 
 O grafico nao expressa o valor total das doacoes por candidato.
 ```{r,echo=FALSE}
 profissional <- top_ocupacoes[1]
-ggplot(data = subset(top3_candidatos,contbr_occupation==profissional), aes(x=cand_nm,y=contb_receipt_amt))+
+ggplot(data = subset(top3_candidatos, contbr_occupation == profissional),
+       aes(x = cand_nm, y = contb_receipt_amt))+
   geom_violin()+
   xlab("Candidato")+
   ylab("Contribuicao[$]")+
@@ -239,7 +319,7 @@ Criando uma tabela que descreva o grafico acima, temos que o valor medio das doa
 
 ```{r,echo=FALSE}
 profissional <- top_ocupacoes[1]
-aux <- subset(top3_candidatos,contbr_occupation==profissional) %>%
+aux <- subset(top3_candidatos, contbr_occupation == profissional) %>%
         group_by(cand_nm) %>%
         summarise(Media = mean(contb_receipt_amt),
                   Mediana = median(contb_receipt_amt),
@@ -251,12 +331,15 @@ head(aux)
 ```
 
 #Analisando as doacoes dos desempregados
+Como os desempregados sao um grande grupo de doadores e sofre pressao economica e um grupo quer mudancas politicas que podem ser sociais ou economicas.
+
 Pelo gráfico e tabela abaixo, vemos que Trump tem pouca popularidade com os desempregados, enquanto Sanders recebeu a maior numero de doacoes, porem com menor valor que Hillary.
 
 A tabela abaixo demonstra essas relacoes.
 ```{r,echo=FALSE}
 profissional <- top_ocupacoes[2]
-ggplot(data = subset(top3_candidatos,contbr_occupation==profissional), aes(x=cand_nm,y=contb_receipt_amt))+
+ggplot(data = subset(top3_candidatos, contbr_occupation == profissional),
+       aes(x = cand_nm,y = contb_receipt_amt))+
   geom_violin()+
   xlab("Candidato")+
   ylab("Contribuicao[$]")+
@@ -265,7 +348,7 @@ ggplot(data = subset(top3_candidatos,contbr_occupation==profissional), aes(x=can
 
 ```{r,echo=FALSE}
 profissional <- top_ocupacoes[2]
-aux <- subset(top3_candidatos,contbr_occupation==profissional) %>%
+aux <- subset(top3_candidatos, contbr_occupation == profissional) %>%
         group_by(cand_nm) %>%
         summarise(Media = mean(contb_receipt_amt),
                   Mediana = median(contb_receipt_amt),
@@ -276,22 +359,25 @@ aux <- subset(top3_candidatos,contbr_occupation==profissional) %>%
 aux
 ```
 
-#Tabela de estatisticas de doacoes agrupadas por candidato e ocupacao
+##Tabela de estatisticas de doacoes agrupadas por candidato e ocupacao
+Já está claro a preferencia dos doadores pelos candidatos, assim a arrecadaco absoluta de Trump sera sempre inferior aos demais, mas em termos relativos o valor arrecado por doacao pode mostrar que os apoiadores de Trump realizam maior contribuicao.
+
+Abaixo temos uma analise relativa com tabela e grafico.
+
 ```{r,echo=FALSE}
 donations <- subset(top3_candidatos,contbr_occupation %in% top_ocupacoes) %>%
-        group_by(cand_nm,contbr_occupation) %>%
+        group_by(cand_nm, contbr_occupation) %>%
         summarise(Media = mean(contb_receipt_amt),
                   Mediana = median(contb_receipt_amt),
                   Total = sum(contb_receipt_amt),
                   Contagem = n()) %>%
         arrange(contbr_occupation)
-donations
+
+knitr::kable(donations)
 ```
 
-#Grafico de doacao por ocupacao
-Vemos que o valor medio das doacoes para Trump e sempre maior, devido a quantidade de doadores. Os medicos possuem o maior valor medio de doacao.
-
-Com uma quantidade de doadores muito superior a media do valor doado para Hillary e inferior a media dos demais candidatos na maioria dos casos.
+##Grafico de doacao por ocupacao
+Vemos que o valor medio das doacoes para Trump e em geral maior e medicos possuem o maior valor medio de doacao.
 ```{r,echo=FALSE}
 ggplot(data = donations, aes(x = contbr_occupation, y = Media))+
   #geom_tile(aes(color = cand_nm))+
@@ -308,12 +394,23 @@ ggplot(data = donations, aes(x = contbr_occupation, y = Mediana))+
   ylab("Media Contribuicao[$/Doacao]")
 
 ```
+Como comparativo temos que excluindo Hillary do total arrecado vemos que Trump ~34% do valor total com somente ~14% dos doacoes, enquanto Sanders arrecadou ~65% do valor total com ~85% das doacoes.
+```{r,echo=FALSE}
+aux <- filter(donations,contbr_occupation == "PHYSICIAN" & !("Clinton, Hillary Rodham" == cand_nm))[c(1,5,6)]
+
+data.frame(aux["cand_nm"],aux["Total"]/sum(aux["Total"]),aux["Contagem"]/sum(aux["Contagem"]))
+
+rm(aux)
+```
 
 #Analise temporal
-Contribuicao de aposentados e desempregados no tempo nao apresenta nenhum padrao destacavel, mas o grafico pode ser polido para incrementar as informacoes.
-```{r}
-ggplot(data=subset(top3_candidatos, contbr_occupation == top_ocupacoes[1] | contbr_occupation == top_ocupacoes[2]), aes(x=contb_receipt_dt,y=contb_receipt_amt))+
-  geom_point(aes(color = contbr_occupation),alpha = 1/40)
+Na analise anterior nos focamos no valor das doacoes para cada candidato vindo de cada ocupacao. Agora nos focamos em entender como as doacoes ocorrem no tempo para cada candidato.
+
+No grafico e interessante como as doacoes ocorrem ao longo do tempo, as doacoes para Hillary ocorrem de forma quase uniforme, enquanto Sanders fica estacionado em uma faixa intermediaria. No caso de Trump as doacoes ocorrem no final do periodo, isso nos faz supor que foi na fase final que ele ganhou popularidade.
+```{r, echo=FALSE}
+ggplot(data=subset(top3_candidatos),
+       aes(x = contb_receipt_dt, y = cand_nm))+
+  geom_tile(aes(fill = contb_receipt_amt), alpha = 1/20)
 ```
 
 #Gráficos Finais e Sumário
@@ -321,20 +418,21 @@ O objetivo desta parte é selecionar 3 gráficos acima e deixá-los mais polidos.
 
 
 ##Grafico Violino
-Fica claro o qu efoi visto anteriormente sobro valor medio das doacoes e a quantidade de doadores.
+Fica claro o quefoi visto anteriormente sobro valor medio das doacoes e a quantidade de doadores.
 
 Os barras para Trump sao alongadas, porem estreitas, devido as poucas doacoes, mas com valores altos se comparados aos demais candidatos.
 
 Para Hillary e Sanders a forma "gordinha" mostra que numero de contribuintes e grande, mas como a mediana das doacoes nao e alta, temos que sao pouco alongadas.
 ```{r,echo=FALSE}
-ggplot(data = subset(top3_candidatos,contbr_occupation %in%  top_ocupacoes), aes(x=cand_nm,y=contb_receipt_amt))+
-  geom_violin(aes(fill=contbr_occupation),color = "gray75")+
-  scale_fill_discrete(guide=guide_legend( title = "Ocupacao"))+
+ggplot(data = subset(top3_candidatos,contbr_occupation %in%  top_ocupacoes),
+       aes(x = cand_nm,y = contb_receipt_amt))+
+  geom_violin(aes(fill = contbr_occupation),color = "gray75")+
+  scale_fill_discrete(guide = guide_legend( title = "Ocupacao"))+
   coord_trans(y = "sqrt")+
   xlab("Candidato")+
   ylab("Contribuicao[$]")+
   ggtitle("Top 10-Ocupacoes doadoras por candidato")+
-  theme(axis.text.x=element_text(colour="darkblue"), 
+  theme(axis.text.x = element_text(colour = "darkblue"), 
         axis.text.y = element_text(colour = "darkblue"),
         axis.title.x = element_text(colour = "midnightblue"),
         axis.title.y = element_text(colour = "midnightblue"),
@@ -347,12 +445,13 @@ Expandindo a  quantidade de informacao no grafico anterior podemos ver como esta
 ggplot(data = dados, aes(x = cand_nm, fill = ..count../sum(..count..)))+
   geom_bar()+
   #scale_fill_continuous(guide=guide_legend( title = "Proporcao"))+
-  scale_fill_gradientn(colours = colorRampPalette(c("red","yellow"))(100),guide = guide_legend( title = "Proporcao das doacoes(Quantidade)"))+
+  scale_fill_gradientn(colours = colorRampPalette(c("red","yellow"))(100),
+                       guide = guide_legend( title = "Proporcao das doacoes(Quantidade)"))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   xlab("Candidato")+
   ylab("Contagem")+
   ggtitle("Contagem e proporcao de contribuicoes")+
-   theme(axis.text.x=element_text(colour="darkblue"), 
+   theme(axis.text.x = element_text(colour = "darkblue"), 
         axis.text.y = element_text(colour = "darkblue"),
         axis.title.x = element_text(colour = "midnightblue"),
         axis.title.y = element_text(colour = "midnightblue"),
@@ -363,20 +462,25 @@ ggplot(data = dados, aes(x = cand_nm, fill = ..count../sum(..count..)))+
 Atraves da nova visao temos as doacoes dos contribuintes que nao declaram sua ocupacao ocorrem com frequencia com valores maiores que os demais profissionais.
 
 Os valores se espalham de forma aleatoria, mas podemos ver pela concentracao de linhas cinzas no final do lado direito que uma suposicao plausível seria que as doacoes perdem forca no final do periodo considerado na base de dados, ou seja, a maior parte do dinheiro que chega por doacoes vem antes das semanas finais do data set.
+Temos tambem que os aposentados mantem regularidade nas doacoes ao longo do tempo.
 ```{r,echo=FALSE}
-ggplot(data=subset(top3_candidatos, contbr_occupation %in% top_ocupacoes),
-       aes(x=contb_receipt_dt,y=contbr_occupation))+
+
+ggplot(data = top3_candidatos,
+       aes(x = contb_receipt_dt,y = cand_nm),alpha = 1/15)+
   geom_tile(aes(fill = contb_receipt_amt))+
-  scale_fill_gradientn(colours = colorRampPalette(c("red","yellow","blue"))(100),guide = guide_legend( title = "Valor Doacao"),breaks=seq(0,1000,100))+
+  scale_fill_gradientn(colours = colorRampPalette(c("red","yellow","blue"))(100),
+                       guide = guide_legend( title = "Valor Doacao"),
+                       breaks = seq(0,1000,100))+
   scale_x_discrete(breaks = 1:20)+
   xlab("Data")+
-  ylab("Ocupacao")+
-  ggtitle("Doacao x Ocupacao por dia")+
-   theme(axis.text.x=element_text(colour="darkblue"), 
+  ylab("Candidato")+
+  ggtitle("Doacao x Candidato no tempo")+
+   theme(axis.text.x = element_text(colour="darkblue"), 
         axis.text.y = element_text(colour = "darkblue"),
         axis.title.x = element_text(colour = "midnightblue"),
         axis.title.y = element_text(colour = "midnightblue"),
         title = element_text(colour = "midnightblue"))
+
 ```
 
 
@@ -391,7 +495,7 @@ O ultimo grafico pode ser alterado para fornecer informacoe do fluxo de doacoes 
 ###Sucessos
 Tivemos sucesso em entender como as doacoes ocorrem por ocupacao, valor doado e os candidatos preferidos, alem do valor medio, mediano e total doado para os 3 principais candidatos e complementamos com uma analise de doacao no tempo por ocupacao.
 
-###Difuldades
+###Dificuldades
 A base de dados nao traz grandes dificuldades devido a seu formato, mas a falta de informacao sobre a ocupacao prejudica a analise. O campo "INFORMATION REQUESTED" e a quarta ocupacao que mais aparece. 
 
 O tamanho da base de dados deixa a renderizacao dos graficos lenta em algus casos.
