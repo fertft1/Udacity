@@ -28,8 +28,8 @@ O presente trabalho tem como objetivo o estudo da base de dados [2016 Presidenti
 O trabalho foca nos principais candidatos e na origem das suas doacoes para entender como a ocupacao de cada doador esta relacionada a escolha do seu candidato.
 
 #Importacao dos dados
-Nomes de colunas s√£o gerados de forma autom√°tica.
-```{r importacao echo = FALSE, results = 'asis'}
+Nomes de colunas s√£o gerados de forma automatica.
+```{r importacao, echo = FALSE}
 unzip("P00000001-CA.zip","P00000001-CA.csv")
 dados <- read.csv("P00000001-CA.csv", header = TRUE, sep = ",",
                   row.names = NULL)
@@ -42,7 +42,7 @@ Os campos election_tp,tran_id,form_tp sao campos de controle de fluxo de informa
 
 #Corrigindo a posicao das colunas
 Corrigindo a posicao das colunas e retirando os campos que nao serao utilizados.
-```{r echo = FALSE, results = 'asis'}
+```{r echo = FALSE}
 #mudar nomes das colunas deslocando as posicoes de p para p-1 e adicionando o campo "xx" pq vai existir um campo sem nome
 colnames(dados)= c(colnames(dados)[-1], "xx")
 
@@ -494,6 +494,16 @@ O ultimo grafico pode ser alterado para fornecer informacoe do fluxo de doacoes 
 
 ###Sucessos
 Tivemos sucesso em entender como as doacoes ocorrem por ocupacao, valor doado e os candidatos preferidos, alem do valor medio, mediano e total doado para os 3 principais candidatos e complementamos com uma analise de doacao no tempo por ocupacao.
+Enumerando o que foi encontrado:
+ 1. 75% das doacoes s„o atÈ $99 e 95% atÈ $400
+ 2. Acima de $1300 considerando outliers
+ 3. Identficamos que a grande maioria das doacoes sao os candidatos Hillary, Sanders e Trump
+ 4. As doacoes variam no tempo, tendo dois picos no inicio e final do periodo enquanto que no periodo intermediario ocorre uma queda
+ 5. Aposentados e desempregados sao os principais doadores
+ 6. Em geral a maioria das doacoes de qualquer ocupacao se concentra em $0-$50, mas no caso dos doadores que **nao declararam** as faixas $50-$100     e $100-$150 sao maiores
+ 7. Trump teve o menor numero de doacoes
+ 8. Trump teve o maior valor medio por doacao
+ 9. A analise temporal mostra que Trump recebeu a maioria das doacoes nos ultimos meses de 2016
 
 ###Dificuldades
 A base de dados nao traz grandes dificuldades devido a seu formato, mas a falta de informacao sobre a ocupacao prejudica a analise. O campo "INFORMATION REQUESTED" e a quarta ocupacao que mais aparece. 
