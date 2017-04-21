@@ -23,10 +23,14 @@ library(iterators)
 #Introducao
 
 O presente trabalho tem como objetivo o estudo da base de dados [2016 Presidential Campaign Finance ](http://fec.gov/disclosurep/pnational.do) que reune dados de doacoes para campanhas de diversos candidatos. Os pontos que valem a pena serem destacados sao:
-> Os dados utilizados sao do estado da California
-> Existe somente uma variavel numerica, sendo as demais categoricas
-> O arquivo possui mais de 1 milhao de linhas
-> Existem doacoes negativas que precisaram serem tratadas
+
+1. Os dados utilizados sao do estado da California
+
+2. Existe somente uma variavel numerica, sendo as demais categoricas
+
+3. O arquivo possui mais de 1 milhao de linhas
+
+4. Existem doacoes negativas que precisaram serem tratadas
 
 O trabalho foca nos principais candidatos e na origem das suas doacoes para entender como a ocupacao de cada doador esta relacionada a escolha do seu candidato.
 
@@ -545,15 +549,16 @@ Expandindo a  quantidade de informacao no grafico anterior podemos ver como esta
 
 Vemos que Hillary teve mais de **50%** das doacoes gerais, ou seja, incluindo todas as ocupacoes, enquanto Sanders ficou com menos de **30%** e demais candidatos com menos de **10%**. Esta analise pode ser incrementada mostrando todas as ocupacoes.
 
-```{r,echo=FALSE}
+```{r,echo=FALSE }
 ggplot(data = dados, aes(x = cand_nm, fill = ..count../sum(..count..)))+
   geom_bar()+
   #scale_fill_continuous(guide=guide_legend( title = "Proporcao"))+
   scale_fill_gradientn(colours = colorRampPalette(c("red","yellow"))(100),
                        guide = guide_legend( title = "Proporcao das doacoes(Quantidade)"))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   xlab("Candidato")+
   ylab("Contagem")+
+    scale_y_continuous(labels = comma, breaks = seq(0,800e3,100e3))+
   ggtitle("Contagem e proporcao de contribuicoes")+
    theme(axis.text.x = element_text(colour = "darkblue"), 
         axis.text.y = element_text(colour = "darkblue"),
@@ -582,6 +587,7 @@ ggplot(data = subset(top3_candidatos, contb_receipt_amt <= 150),
        aes(x = cand_nm,y = contb_receipt_amt))+
   geom_violin(aes(fill = contbr_occupation),color = "gray75")+
   scale_fill_discrete(guide = guide_legend( title = "Ocupacao"))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   coord_trans(y = "sqrt")+
   xlab("Candidato")+
   ylab("Contribuicao[$]")+
@@ -612,7 +618,8 @@ ggplot(data = aux, aes(x = contb_receipt_dt, y = Soma ))+
     geom_line(aes(color = cand_nm))+
     scale_color_discrete(guide = guide_legend( title = "Candidato"))+
     xlab("Data")+
-    ylab("Contribuicao")+
+    ylab("Contribuicao[$]")+
+    scale_y_continuous(labels = comma,breaks = seq(0,8e5,1e5))
     ggtitle("Doacao x Candidato no tempo")+
     theme(axis.text.x = element_text(colour="darkblue"), 
         axis.text.y = element_text(colour = "darkblue"),
@@ -625,7 +632,9 @@ rm(aux)
 
 
 #Reflexoes
+
 ###Ideias futuras
+
 Uma informacao que nao foi explorada na base de dados e as doacoes por genero. Para realizar essa analise temos de pegar o nome do doador e analisar se o primeiro nome e um nome masculino ou feminino, assim teriamos um comparativo de como homens e mulheres fazem doacoes e qual a ocupacao destes doadores. 
 
 Como temos os nomes das cidades podemos fazer a geoanalise da origem das doacoes por candidato. A variavel "employer" tambem poderia nos fornecer informacoes se existe um tendencia de doacao dentro de um determinado setor, mas para isso precisariamos de uma base auxiliar que nos desse o setor da empresa.
@@ -633,19 +642,30 @@ Como temos os nomes das cidades podemos fazer a geoanalise da origem das doacoes
 O ultimo grafico pode ser alterado para fornecer informacoe do fluxo de doacoes para cada um dos 3 candidatos principais que segregamos.
 
 ###Sucessos
+
 Tivemos sucesso em entender como as doacoes ocorrem por ocupacao, valor doado e os candidatos preferidos, alem do valor medio, mediano e total doado para os 3 principais candidatos e complementamos com uma analise de doacao no tempo por ocupacao.
 Enumerando o que foi encontrado:
+
  1. 75% das doacoes são até $99 e 95% até $400
+ 
  2. Acima de $1300 considerando outliers
+ 
  3. Identficamos que a grande maioria das doacoes sao os candidatos Hillary, Sanders e Trump
+ 
  4. As doacoes variam no tempo, tendo dois picos no inicio e final do periodo enquanto que no periodo intermediario ocorre uma queda
+ 
  5. Aposentados e desempregados sao os principais doadores
+ 
  6. Em geral a maioria das doacoes de qualquer ocupacao se concentra em $0-$50, mas no caso dos doadores que **nao declararam** as faixas $50-$100     e $100-$150 sao maiores
+ 
  7. Trump teve o menor numero de doacoes
+ 
  8. Trump teve o maior valor medio por doacao
+ 
  9. A analise temporal mostra que Trump recebeu a maioria das doacoes nos ultimos meses de 2016
 
 ###Dificuldades
+
 A base de dados nao traz grandes dificuldades devido a seu formato, mas a falta de informacao sobre a ocupacao prejudica a analise. O campo "INFORMATION REQUESTED" e a quarta ocupacao que mais aparece. 
 
 O tamanho da base de dados deixa a renderizacao dos graficos lenta em algus casos.
