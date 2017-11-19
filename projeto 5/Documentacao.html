@@ -14590,7 +14590,7 @@ UURERERERJL+N6VQOxo2bV+aAAAAAElFTkSuQmCC
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[43]:</div>
+<div class="prompt input_prompt">In&nbsp;[42]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">tester</span> <span class="kn">import</span> <span class="n">test_classifier</span>
@@ -16165,17 +16165,32 @@ RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;gini&#3
 <p>False negatives = 445</p>
 <p>True negatives= 7288</p>
 </blockquote>
+<p>Esse resultado foi encontrado usando somente as features poi,expenses,total_stock_value e ratio_to.</p>
+<p>Destaque para uso da feature ratio_to que foi criada.</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[45]:</div>
+<div class="prompt input_prompt">In&nbsp;[46]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">features_list</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;poi&#39;</span><span class="p">,</span><span class="s1">&#39;expenses&#39;</span><span class="p">,</span><span class="s1">&#39;total_stock_value&#39;</span><span class="p">,</span><span class="s1">&#39;ratio_to&#39;</span><span class="p">]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[47]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">clf</span> <span class="o">=</span> <span class="n">DecisionTreeClassifier</span><span class="p">(</span><span class="n">max_depth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">min_samples_split</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">test_classifier</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">my_dataset</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;poi&#39;</span><span class="p">,</span><span class="s1">&#39;expenses&#39;</span><span class="p">,</span><span class="s1">&#39;total_stock_value&#39;</span><span class="p">,</span><span class="s1">&#39;ratio_to&#39;</span><span class="p">])</span>
+<span class="n">test_classifier</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">my_dataset</span><span class="p">,</span> <span class="n">features_list</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -16198,8 +16213,8 @@ RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;gini&#3
             min_samples_leaf=1, min_samples_split=3,
             min_weight_fraction_leaf=0.0, presort=False, random_state=None,
             splitter=&#39;best&#39;)
-	Accuracy: 0.87300	Precision: 0.44348	Recall: 0.56100	F1: 0.49536	F2: 0.53276
-	Total predictions: 9000	True positives:  561	False positives:  704	False negatives:  439	True negatives: 7296
+	Accuracy: 0.87133	Precision: 0.43760	Recall: 0.55400	F1: 0.48897	F2: 0.52602
+	Total predictions: 9000	True positives:  554	False positives:  712	False negatives:  446	True negatives: 7288
 
 </pre>
 </div>
@@ -16211,14 +16226,13 @@ RandomForestClassifier(bootstrap=True, class_weight=None, criterion=&#39;gini&#3
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[46]:</div>
+<div class="prompt input_prompt">In&nbsp;[48]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="c1">### Task 6: Dump your classifier, dataset, and features_list so anyone can</span>
 <span class="c1">### check your results. You do not need to change anything below, but make sure</span>
 <span class="c1">### that the version of poi_id.py that you submit can be run on its own and</span>
 <span class="c1">### generates the necessary .pkl files for validating your results.</span>
-
 <span class="n">dump_classifier_and_data</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">my_dataset</span><span class="p">,</span> <span class="n">features_list</span><span class="p">)</span>
 </pre></div>
 

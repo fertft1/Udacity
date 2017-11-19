@@ -605,7 +605,7 @@ features_train, features_test, labels_train, labels_test =     train_test_split(
 
 # ### Importando função para teste
 
-# In[43]:
+# In[42]:
 
 
 from tester import test_classifier
@@ -876,21 +876,30 @@ test_classifier(clf, my_dataset, features_list)
 # > False negatives = 445
 # 
 # > True negatives= 7288
+# 
+# Esse resultado foi encontrado usando somente as features poi,expenses,total_stock_value e ratio_to.
+# 
+# Destaque para uso da feature ratio_to que foi criada.
 
-# In[45]:
+# In[46]:
+
+
+features_list = ['poi','expenses','total_stock_value','ratio_to']
+
+
+# In[47]:
 
 
 clf = DecisionTreeClassifier(max_depth=None, min_samples_split=3)
-test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value','ratio_to'])
+test_classifier(clf, my_dataset, features_list)
 
 
-# In[46]:
+# In[48]:
 
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
 ### check your results. You do not need to change anything below, but make sure
 ### that the version of poi_id.py that you submit can be run on its own and
 ### generates the necessary .pkl files for validating your results.
-
 dump_classifier_and_data(clf, my_dataset, features_list)
 
