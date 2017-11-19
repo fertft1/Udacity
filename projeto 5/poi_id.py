@@ -605,7 +605,7 @@ features_train, features_test, labels_train, labels_test =     train_test_split(
 
 # ### Importando função para teste
 
-# In[42]:
+# In[43]:
 
 
 from tester import test_classifier
@@ -854,9 +854,37 @@ clf = RandomForestClassifier(max_depth=4, min_samples_split=2, n_estimators=30)
 test_classifier(clf, my_dataset, features_list)
 
 
-# Após vários testes temos que Random Forest não conseguiu resultados melhores que Decision Tree quando olhamos precision e recall. Como foi estabelecido que ambos devem estar acima de .3 somente o classificador Decision Tree foi aceito.
+# # Melhor resultado
 
-# In[49]:
+# Após vários testes temos que Random Forest não conseguiu resultados melhores que Decision Tree quando olhamos precision e recall. Como foi estabelecido que ambos devem estar acima de .3 somente o classificador Decision Tree foi aceito.
+# 
+# Os melhores parâmetros encontrados para Decision Tree classifier foram os default, exceto min_samples_split que foi determinado igual 3 para melhor ajuste.
+# 
+# Os valores encontrados para o melhor classificador foram:
+# > Precision = 0.43804
+# 
+# > Recall = 0.55500
+# 
+# > Acurracy = 0.87144
+# 
+# > predictions = 9000	
+# 
+# > True positives = 555
+# 
+# > False positives = 712	
+# 
+# > False negatives = 445
+# 
+# > True negatives= 7288
+
+# In[45]:
+
+
+clf = DecisionTreeClassifier(max_depth=None, min_samples_split=3)
+test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value','ratio_to'])
+
+
+# In[46]:
 
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
