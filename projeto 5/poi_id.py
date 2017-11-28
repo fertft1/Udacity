@@ -268,18 +268,111 @@ with open("final_project_dataset.pkl", "r") as data_file:
     data_dict = pickle.load(data_file)
 
 
+# # Familiarização com os dados
+# 
+# Análise sobre as características da base de dados.
+
+# #### Quantidades de POIs e Non-POIs
+
+# In[14]:
+
+
+pois = set( key for key, value in data_dict.items() if value['poi'] == True)
+non_pois = set( key for key, value in data_dict.items() if value['poi'] == False)
+
+print 'Quantidade de data points ' + str(len(pois | non_pois))
+print 'Quatidade de pois ' + str(len(pois))
+print 'Quantidade de non-pois ' + str(len(non_pois))
+
+
+# #### Features no data point - quantidade e tipo 
+# 
+# Nosso data set inicial contém 3 tipos de dados:
+# * Financeiro (em dólares - numérico)
+# > * salary 
+# > * deferral_payments 
+# > * total_payments 
+# > * loan_advances 
+# > * bonus 
+# > * restricted_stock_deferred 
+# > * deferred_income 
+# > * total_stock_value 
+# > * expenses 
+# > * exercised_stock_options 
+# > * other 
+# > * long_term_incentive 
+# > * restricted_stock
+# > * director_fees
+# * e-mail (text string)
+# > * to_messages
+# > * email_address
+# > * from_poi_to_this_person
+# > * from_messages
+# > * from_this_person_to_poi
+# > * shared_receipt_with_poi
+# * POI 
+# > * Booleano - True/False se a pessoa é um poi (person of interest)
+
+# #### Aplicação de Machine Learning
+# A partir do data point temos uma relação de features e um target (feature POI).
+# 
+# Nosso objetivo é identificar os POis e Non-Pois no data set, ou seja, precisamos classificar cada pessoa no data set. Para realizar esses trabalho temos como ferramenta os vários algoritmos de machine learning que através de uma base de treino contendo features e targets conseguem aprender a classificar de forma generalizada (necessário controlar overfitting) se uma pessoa é um POI através de suas features (as mesmas contidas no treinamento).
+# 
+# Para generalizar o classificador precisamos escolher quais features trazem informações para melhorar a assertividade do classificador das que criam ruídos e consequentemente pioram dos resultados de métricas de desempenho como acurácia, precisão e recall.
+
+# #### Valores NaN
+
+# In[15]:
+
+
+from collections import Counter
+counter = Counter()
+for key, value in data_dict.items():
+    for key_value, value_value in value.items():
+        if value_value == 'NaN':
+            counter[key_value] += 1
+
+
+# In[16]:
+
+
+counter
+
+
+# In[17]:
+
+
+y = [i for _, i in counter.most_common()]
+x = [i for i, _ in counter.most_common()]
+
+
+# In[18]:
+
+
+plt.figure(figsize=(20,8))
+plt.hlines(y=146, xmin=0, xmax=20, colors='steelblue')
+plt.bar(range(len(y)), y)
+plt.xticks(range(len(y)),x, rotation = 45, fontsize = 12)
+plt.title('Quantidade de NaNs por feature')
+plt.show()
+
+
+# Vemos pelo gráfico temos que algumas características possuem muitos valores NaN. Esses valores serão tratados nos passos seguintes e serão analisados os casos em faz sentido substituit NaN por algum valor como 0.
+# 
+# Como nossa base de dados é pequena, excluir dados pode inviabilizar o classificador, pois este não estaria apto a generalizar o resultado, a partir, do treinamento com small data.
+
 # # Cleaning Data
 # Temos que alguns campos estão como 'NaN', logo estes campos não serão considerados neste momento para facilitar a análise de outliers (análise gráfica) e outras análises que a falta de dados pode enviesar. Se os campos com 'NaN' estiverem na feature_list eles serão futuramente adicionados com valor 0.
 
 # Antes de retirar os valores NaN
 
-# In[14]:
+# In[19]:
 
 
 data_dict['METTS MARK']
 
 
-# In[15]:
+# In[20]:
 
 
 data_dict = F_RetirarNaNs(data_dict)
@@ -287,7 +380,7 @@ data_dict = F_RetirarNaNs(data_dict)
 
 # Após ser retirado os NaNs
 
-# In[16]:
+# In[21]:
 
 
 data_dict['METTS MARK']
@@ -295,7 +388,7 @@ data_dict['METTS MARK']
 
 # A pasta email_by_address será utilizada nesse trabalho. Como algumas keys em data_dict não possuem e-mail, essas pessoas serão desconsideradas. Isso reduz a base de dados, mas trará maior consistência do que supor que essas não trocam e-mails.
 
-# In[17]:
+# In[22]:
 
 
 for key in data_dict.keys():
@@ -306,7 +399,7 @@ for key in data_dict.keys():
 # # Task 2: Remove outliers
 # A análise gráfica será utilizada para descobrir se existem outliers na base de dados.
 
-# In[18]:
+# In[23]:
 
 
 plot_list = ['salary','total_payments', 'bonus', 'total_stock_value', 'expenses', 'exercised_stock_options', 
@@ -329,7 +422,7 @@ F_PlotOutliers(plot_list, ordem)
 
 # ### SALARY
 
-# In[19]:
+# In[24]:
 
 
 ordem['salary'][-3:]
@@ -339,7 +432,7 @@ ordem['salary'][-3:]
 
 # ### EXERCISED STOCK OPTIONS
 
-# In[20]:
+# In[25]:
 
 
 ordem['exercised_stock_options'][-2:]
@@ -349,7 +442,7 @@ ordem['exercised_stock_options'][-2:]
 
 # ### RESTRICTED STOCK
 
-# In[21]:
+# In[26]:
 
 
 ordem['restricted_stock'][-3:]
@@ -375,7 +468,7 @@ ordem['restricted_stock'][-3:]
 
 # Para cada pessoa em data_dict pego os destinatários dos emails from e to
 
-# In[22]:
+# In[27]:
 
 
 email_poi = ((data_dict[key]['email_address'], data_dict[key]['poi']) for key in data_dict.keys() 
@@ -390,13 +483,13 @@ for email, poi in email_poi:
     to_[email] = F_PessoaEmail('emails_by_address', address_to)      
 
 
-# In[23]:
+# In[28]:
 
 
 poi_aux_list = F_ExtraiPoisAbreviados(data_dict)
 
 
-# In[24]:
+# In[29]:
 
 
 poi_aux_list
@@ -404,7 +497,7 @@ poi_aux_list
 
 # Determinar a quantidade POis com que a pessoa interage por e-mails
 
-# In[25]:
+# In[30]:
 
 
 from_count, from_ratio = F_StatMsg(from_, poi_aux_list)
@@ -417,7 +510,7 @@ to_count, to_ratio = F_StatMsg(to_, poi_aux_list)
 # 
 # As featrues to_count e from_count me dão a quantidade de POis que receberam ou enviaram mensagem para a key no dataset, ou seja, eu tenho a quantidade de relacionamentos com POis de uma determinada pessoa. Podemos supor que pessoas que não trocaram e-mais com POis não tem relação com a fraude da Enron e portanto não são POis.
 
-# In[26]:
+# In[31]:
 
 
 for key in data_dict.keys():
@@ -430,7 +523,7 @@ for key in data_dict.keys():
 
 # Fazendo uam simples verificação se a atualização ocorreu corretamente
 
-# In[27]:
+# In[32]:
 
 
 data_dict[data_dict.keys()[27]]
@@ -438,7 +531,7 @@ data_dict[data_dict.keys()[27]]
 
 # Adicionando a razão de envio/recebimento de e-mails de uma pessoa com um POis e apagando campos desnecessários para continuidade das análises
 
-# In[28]:
+# In[33]:
 
 
 for key, value in data_dict.items():
@@ -469,13 +562,13 @@ for key, value in data_dict.items():
 # 
 # É um dataset pequeno o que pode dificultar a qualidade do classificador
 
-# In[29]:
+# In[34]:
 
 
 len(data_dict)
 
 
-# In[30]:
+# In[35]:
 
 
 data_dict[data_dict.keys()[9]]
@@ -490,7 +583,7 @@ data_dict[data_dict.keys()[9]]
 # 
 # Com isso temos 4 características que destacam relação entre pessoas e as demais estão associadas a finanças. O escândalo da Enron envolveu seus principais executivos que são pessoas que possuem padrões diferenciados de bônus, salários, gastos e ganhos especiais com ações (stocks) o que justifica usar as características que estão em features_list
 
-# In[31]:
+# In[36]:
 
 
 features_list = ['poi','salary','total_payments', 'bonus', 'total_stock_value', 'expenses', 
@@ -498,19 +591,19 @@ features_list = ['poi','salary','total_payments', 'bonus', 'total_stock_value', 
                  'to_count', 'from_count','ratio_to','ratio_from'] 
 
 
-# In[32]:
+# In[37]:
 
 
 data_dict['METTS MARK']
 
 
-# In[33]:
+# In[38]:
 
 
 data_dict, scale  = F_FeatureScalling(data_dict, ['email_address','poi'], features_list)
 
 
-# In[34]:
+# In[39]:
 
 
 data_dict['METTS MARK']
@@ -518,7 +611,7 @@ data_dict['METTS MARK']
 
 # Adicionar ao dataset final as correções e features executadas no dataset inicial
 
-# In[35]:
+# In[40]:
 
 
 ### Task 3: Create new feature(s)
@@ -534,14 +627,14 @@ my_dataset = data_dict
 # 
 # Ao adicionar valor 0 para features que eram Nan ou não existiam, estou perdendo consistência no dataset ao supor valores, mas esse passo será necessário para não reduzir ainda mais o dataset o que prejudicaria a performance do classificador e traria risco de overfitting
 
-# In[36]:
+# In[41]:
 
 
 not_person_feature = F_VerificarExisteFeature()
 not_person_feature
 
 
-# In[37]:
+# In[42]:
 
 
 for key, values in not_person_feature.items():
@@ -551,7 +644,7 @@ for key, values in not_person_feature.items():
 
 # Verificando novamente se existe algum campo com problema
 
-# In[38]:
+# In[43]:
 
 
 F_VerificarExisteFeature()
@@ -559,7 +652,7 @@ F_VerificarExisteFeature()
 
 # # Extrair features e labels
 
-# In[39]:
+# In[44]:
 
 
 ### Extract features and labels from dataset for local testing
@@ -569,9 +662,11 @@ labels, features = targetFeatureSplit(data)
 
 # # Task 4: Try a varity of classifiers
 
-# Foram testados vários classificadores com vários parâmetros difirentes
+# Foram testados vários classificadores com vários parâmetros diferentes
+# 
+# As features criadas foram avaliadas durante os testes.
 
-# In[40]:
+# In[45]:
 
 
 ### Task 4: Try a varity of classifiers
@@ -588,7 +683,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 
 
-# In[41]:
+# In[46]:
 
 
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall 
@@ -605,7 +700,7 @@ features_train, features_test, labels_train, labels_test =     train_test_split(
 
 # ### Importando função para teste
 
-# In[42]:
+# In[48]:
 
 
 from tester import test_classifier
@@ -614,7 +709,25 @@ from sklearn.model_selection import GridSearchCV
 
 # Vou utilizar vários classificadores e para melhorar o desempenho preciso ajustar o parâmetros de cada classificador. Para que isso ocorra vou usar GridSeachCV para fazer um teste exaustivo sobre várias configurações possíveis de parâmetros.
 # 
-# Essa busca vai fazer o algoritmo se ajustar melhor aos dados e consequentemente melhorar o desempenho do classificador
+# Essa busca vai fazer o algoritmo se ajustar melhor aos dados e consequentemente melhorar o desempenho do classificador no processo de validação.
+
+# #### Validação 
+# 
+# Para estimar a performance do nosso classificador após o treinamento realizamos a validação. Para isso dividimos nossos dados em treinamento e teste.
+# 
+# Os dados de teste são para estimar a performance do algoritmo em um data set independente e analisar se existe overfitting, ou seja, se nosso classificador está enviesado do treinamento e não pode ser generalizado para outros data sets.
+# 
+# Essa validação com data set de treinamento e testes é chamada cross-validation.
+
+# #### Tipo de validação
+
+# Neste trabalho foi utilizado o StratifiedShuffleSplit para cross-validation.
+# 
+# Devido a nosso data set ser pequeno, vamos usar a técnica de k-folds para ampliar a base de treinamento. A técnica consiste em dividir nosso data set em n folds com quantidade semelhante de dados, onde cada fold contém dados para treino e teste.
+# 
+# Para evitar overfitting temos de evitar que os folds estejam enviesados. Para isso os dados devem ser embaralha de forma pseudo-aleatória para garantir sua homegeneidade.
+# 
+# Todos esses passos de criar k-folds com dados embaralhados e dividir em dados de treino e teste são feitos por StratifiedShuffleSplit.
 
 # ### Naive Bayes
 
@@ -630,7 +743,7 @@ for ii in features_list:
         test_classifier(clf, my_dataset, ['poi',ii])
 
 
-# Para classificador Naiva Bayes temos que o melhor encontrado foi usar somente uma feature (exercised_stock_options)
+# Para classificador Naiva Bayes temos que o melhor resultdo encontrado foi usar somente uma feature (exercised_stock_options)
 
 # In[45]:
 
@@ -659,11 +772,24 @@ for ii in features_list:
 # 
 # O melhor resultado em acurácia, precision e recall para o classificador com configurações padrão está abaixo.
 
-# In[63]:
+# In[282]:
 
 
 clf = DecisionTreeClassifier()
-test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value','ratio_to','expenses'])
+test_classifier(clf, my_dataset, ['poi','total_stock_value','ratio_to','expenses'])
+
+
+# #### Testando impacto da feature criada
+# A feature criada (ratio_to) melhora o recall, mas afeta precision. Existe um trade-off recall-precision com a feature ratio_to.
+# Isso pode estar relacionado com o vazamento de dados devido a ratio_to conter informações sobre se a pessoa é POI ou non-POI que é a variável que queremos prever.
+# 
+# Para evitar vazamento de dados não vou utilizar a variável criada o que trará melhor precision, enquanto uso GridSearchCV com recall como scoring visando incrementar essa métrica.
+
+# In[310]:
+
+
+clf = DecisionTreeClassifier()
+test_classifier(clf, my_dataset, ['poi','total_stock_value','expenses'])
 
 
 # Posso melhorar o desempenho do classificador mudando os seus parâmetros com uma busca exaustiva.
@@ -671,29 +797,37 @@ test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value','ratio_to
 # Os parâmetros para avaliar o classificador são acurácia, precisão e abrangência. Em nossa base a grande maioria das pessoas não são POis e é possível perceber que o classificador fica enviesado para retornar falso e assim ter uma alta acurácia. Precisamos priorizar a precisão e recall do classificador para saber com confiança se ele pode identificar um POis entra a maioria que não esteve envolvida no escandâlo da Enron.
 # 
 # Ter alta precision nos garante que o classificador tem baixo erro quando afirma que uma pessoa é um POI, enquanto um alto recall nos garante que o classificador pode encontrar uma grande quantidade de POis.
+# 
+# Como no passo anterior privilegiei precision na escolha das features vou ajustar os parâmetros com GridShearchCV usando como scoring recall.
 
-# In[79]:
+# #### Seleção de parâmetros
+# 
+# Para otimizar o algoritmo que estamos utilizando, neste caso é uma Decision Trees podemos testar novos parâmetros. O ajuste de parâmetros calibra o algoritmo obter melhores resultados com os dados de treinamento e teste.
+# 
+# Isso nos permite tornar o algoritmo mais especializado para trabalhar com nossos dados o que poderá aumentar acurácia, precision e recal, reduzir overfitting e melhorar performance.
+
+# In[49]:
 
 
-clf = GridSearchCV(DecisionTreeClassifier(),{'min_samples_split':[2,3,4], 'max_depth':[2,3,4,5,None]},scoring='recall' )
-test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value','ratio_to','expenses'])
+clf = GridSearchCV(DecisionTreeClassifier(),{'min_samples_split':[2,3,4], 'max_depth':[2,3,4,5,6,7,None]},scoring='recall' )
+test_classifier(clf, my_dataset, ['poi','total_stock_value','expenses'])
 
 
 # Melhor parâmetro encontrado para Decision Trees foi
 
-# In[80]:
+# In[51]:
 
 
 clf.best_params_
 
 
-# Usando o parâmetro vemos que temos uma precisão de aproximadamente 45% e recall de 56%.
+# Usando os melhores parâmetros temos uma precisão de aproximadamente 62% e recall de 42%.
 
-# In[87]:
+# In[52]:
 
 
-clf = DecisionTreeClassifier(max_depth=None, min_samples_split=3)
-test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value','ratio_to'])
+clf = DecisionTreeClassifier(max_depth=5, min_samples_split=2)
+test_classifier(clf, my_dataset, ['poi','expenses','total_stock_value'])
 
 
 # ## Random Forest
@@ -764,7 +898,28 @@ test_classifier(clf, my_dataset, ['poi','expenses','bonus','ratio_from','ratio_t
                                   'total_stock_value','from_count','to_count','exercised_stock_options'])
 
 
-# Após testar a uso de features temos que temos o conjunto abaixo apresentou o melhor resultado ao equilibrar precision e recall e será utilizada para testar para configurar o classificador
+# Após testar a uso de features temos que temos o conjunto abaixo apresentou o melhor resultado ao equilibrar precision e recall e será utilizada para configurar o classificador.
+
+# In[290]:
+
+
+test_classifier(clf, my_dataset, ['poi','expenses','bonus','ratio_from','ratio_to',
+                                  'total_stock_value','exercised_stock_options'])
+
+
+# #### Testando impacto das features criadas
+# 
+# A melhor combinação de features utiliza 3 features **criadas**(ratio_to, ratio_count e from_count). O impacto da utilização pode ser visto se compararmos os resultados sem utilizar essas features.
+
+# In[291]:
+
+
+test_classifier(clf, my_dataset, ['poi','expenses','bonus', 'total_stock_value','exercised_stock_options'])
+
+
+# Existe uma pequena melhora em precision e recall, mas perda de acurácia.
+
+# #### Seleção de parâmetros
 
 # In[250]:
 
@@ -861,40 +1016,33 @@ test_classifier(clf, my_dataset, features_list)
 # Os melhores parâmetros encontrados para Decision Tree classifier foram os default, exceto min_samples_split que foi determinado igual 3 para melhor ajuste.
 # 
 # Os valores encontrados para o melhor classificador foram:
-# > Precision = 0.43804
 # 
-# > Recall = 0.55500
+# > Precision = 0.62834
+# 
+# > Recall = 0.42350
 # 
 # > Acurracy = 0.87144
 # 
 # > predictions = 9000	
 # 
-# > True positives = 555
+# Esse resultado foi encontrado usando somente as features poi,expenses e total_stock_value.
 # 
-# > False positives = 712	
-# 
-# > False negatives = 445
-# 
-# > True negatives= 7288
-# 
-# Esse resultado foi encontrado usando somente as features poi,expenses,total_stock_value e ratio_to.
-# 
-# Destaque para uso da feature ratio_to que foi criada.
+# As features criadas não foram utilizadas, embora ratio_to fizesse o valor de recall crescer em trade-off com precision que descrescia.
 
-# In[46]:
+# In[54]:
 
 
-features_list = ['poi','expenses','total_stock_value','ratio_to']
+features_list = ['poi','expenses','total_stock_value']
 
 
-# In[47]:
+# In[57]:
 
 
-clf = DecisionTreeClassifier(max_depth=None, min_samples_split=3)
+clf = DecisionTreeClassifier(max_depth=5, min_samples_split=2)
 test_classifier(clf, my_dataset, features_list)
 
 
-# In[48]:
+# In[59]:
 
 
 ### Task 6: Dump your classifier, dataset, and features_list so anyone can
