@@ -15,12 +15,21 @@
 				border-radius: 8px;			
 				pointer-events: none;			
 			}
+			.title{
+				text-align:center;
+				background-color:rgb(100,100,100);
+				color:white;
+				margin:5px;
+				height:50px;
+			}
+			
 			.container{
-				width:100%;
+				margin-left:5px;
+				margin-right:5px;
 				overflow:hidden;
 			}
 			.mapa{
-				background-color:rgb(250,250,250);
+				background-color:rgb(245,245,245);
 				color:darkblue;
 				font-family:Arial;
 				width:50%;
@@ -28,8 +37,10 @@
 				height:700px;
 			}
 			.graph{
+				
 				margin-left:50.5%;
-				background-color:rgb(252,252,252);
+				background-color:rgb(245,245,245);
+				height:700px;
 				
 			}
 			.tick line{
@@ -42,13 +53,13 @@
 			}
 			
 			.bar{
-				fill:black;
-			}
-			.bar-female{
 				fill:darkgreen;
 			}
+			.bar-female{
+				fill:black;
+			}
 			.bar-male{
-				fill:darkblue;
+				fill:gray;
 			}
 			.button{
 				display: inline-block;
@@ -95,8 +106,29 @@
 			
 			var selected_country, //Sempre inicia com Brazil
 				pisa = {},
-				count=null,
-				src;
+				count=null;
+			
+			var src = ['HISCED.csv','MISCED.csv','ST88Q01.csv','ST88Q02.csv'];
+			
+			var	title = //variável que guarda os títulos para dataset que está em na variável src
+					{
+						HISCED:"Highest educational level of parents",
+						MISCED:"Education level of the mother",
+						ST88Q01:"Attitude towards School - Does Little to Prepare Me for Life",
+						ST88Q02:"Attitude towards School - Waste of Time",
+						ST88Q03:"Attitude towards School - Gave Me Confidence",
+						ST88Q04:"Attitude towards School- Useful for Job",
+						ST89Q02:"Attitude toward School - Helps to Get a Job",
+						ST89Q03:"Attitude toward School - Prepare for College",
+						ST89Q04:"Attitude toward School - Enjoy Good Grades",
+						ST89Q05:"Attitude toward School - Trying Hard is Important"	,
+						IC22Q01:"Attitudes - Useful for schoolwork",
+						IC22Q02:"Attitudes - Homework more fun",
+						IC22Q04:"Attitudes - Source of information",
+						IC22Q06:"Attitudes - Troublesome",
+						IC22Q07:"Attitudes - Not suitable for schoolwork",
+						IC22Q08:"Attitudes - Too unreliable"		
+					};
 			
 			function draw(geo){
 				//alguns países são regiões segregadas
@@ -174,13 +206,13 @@
 						d3.select(".country").text(selecao.properties.name).style("color","steelblue");
 						//d3.selectAll(".svg_plot").remove();
 						
-						debugger;
 						selected_country = d.properties.name;
 						
-						//countt gender
-						debugger;
-						draw_graphs(["HISCED",1,null],pisa);
-						draw_graphs(["MISCED",1,null],pisa);
+						src.forEach(
+							function(d){
+								draw_graphs([d.split(".")[0],1,null],pisa);
+							}
+						);
 					};
 				};
 				
@@ -194,29 +226,40 @@
 					}
 				};
 				
-				d3.csv("HISCED.csv",draw_graphs);
-				d3.csv("MISCED.csv",draw_graphs);
+				src.forEach(function(d){d3.csv(d,draw_graphs);});
 				
 			};
 			
 			function draw_graphs(param_in,data){
 				
-				if(param_in == null){
+				if(param_in == null)
+				{
 					
 					var variable = data["columns"][1];
 					var param = [variable, null, null, "svg-" + variable];
-				}else if(param_in[0] == 'd'){
 					
-					debugger;
-					var param = ['HISCED',1,param_in[1],'svg-HISCED'];
-					var x = plot(param, data);
+				}
+				else if(param_in[0] == 'd')
+				{
+					//'d' é quando a chamada ocorre nos botões de seleção de gênero
 					
-					var param = ['MISCED',1,param_in[1],'svg-MISCED'];
-					var x = plot(param, data);
+					src.forEach(
+						function(d)
+						{
+							var dataset = d.split(".")[0];
+							var param = [dataset,1,param_in[1],'svg-' + dataset];
+							var x = plot(param, data);
+						
+							//var param = ['MISCED',1,param_in[1],'svg-MISCED'];
+							//var x = plot(param, data);
+						}
+					)
 					
 					return;
 					
-				}else{
+				}
+				else
+				{
 					
 					var param = [];
 					var variable = param_in[0];
@@ -233,9 +276,8 @@
 			
 			function plot(param,data){	
 					
-				debugger;
-				
 				var dataset;
+				var svg_dim = [500,320 	];
 				var variable = param[0],
 					count = param[1]
 					gender = param[2]
@@ -252,14 +294,15 @@
 									.append("svg")
 										.attr("id","svg")
 										.attr("class",svg_class)
-										.attr("width",400)
-										.attr("height",400);
+										.attr("width",svg_dim[0])
+										.attr("height",svg_dim[1]);
 						
 						svg_plot.append("text")
-										.text("Educational level of mother (ISCED)")
+										.text(title[variable])
+										.attr("transform","translate(0,0)")
 										.attr("x",10)
 										.attr("y",20);
-						
+										
 				}else{
 					
 					dataset = pisa[variable];
@@ -268,36 +311,46 @@
 					var svg_plot = d3.select(".graph")
 									.append("svg")
 									.attr("class",svg_class)
-									.attr("width",400)
-									.attr("height",400);
+									.attr("width",svg_dim[0])
+									.attr("height",svg_dim[1]);
 					
 					svg_plot.append("text")
-										.text("Educational level of mother (ISCED)")
+										.text(title[variable])
+										.attr("transform","translate(0,0)")
 										.attr("x",10)
 										.attr("y",20);
 				};
+								
+				function data_tograph(dataset,mode){
+					if(mode == 'dataset'){
+						return d3.nest().key(function(d){return d[variable];}).rollup(function(v){return d3.sum(v,function(h){return h[selected_country];})}).entries(dataset);
+					}
+					else if(mode=='female'){
+						var x = d3.nest().key(function(d){return d['ST04Q01']}).entries(dataset);
+						return d3.nest().key(function(d){return d[variable];}).rollup(function(v){return d3.sum(v,function(h){return h[selected_country];})}).entries(x[0]["values"]);
+					}
+					else if(mode=='male'){
+						var x = d3.nest().key(function(d){return d['ST04Q01']}).entries(dataset);
+						return d3.nest().key(function(d){return d[variable];}).rollup(function(v){return d3.sum(v,function(h){return h[selected_country];})}).entries(x[1]["values"]);
+					}
+				};
+				function y_perc(dataset){
+					var x = [];	
+					var total = d3.sum(dataset,function(d){return d['value']});
+						
+					dataset.forEach(function(d){return x.push(d['value']/total)});
+					return x;
+				};
 				
-				debugger
+				var acm_data = data_tograph(dataset, 'dataset'),
+					female = data_tograph(dataset,'female'),
+					male = data_tograph(dataset,'male');
+					
+				var perc_acm = y_perc(acm_data);
+				var perc_female = y_perc(female);
+				var perc_male = y_perc(male);
 				
-				
-				
-				//Dados acumulados
-				var acm_data = d3.nest().key(function(d){return d[variable];}).rollup(function(v){return d3.sum(v,function(h){return h[selected_country];})}).entries(dataset);
-				
-				//dados de base
-				var x = d3.nest().key(function(d){return d['ST04Q01']}).entries(dataset);
-				
-				var female = d3.nest()
-							.key(function(d){return d[variable]})
-							.rollup(function(d){return d3.sum(d,function(v){return +v[selected_country];});})
-							.entries(x[0]["values"]);
-				
-				var male = d3.nest()
-							.key(function(d){return d[variable]})
-							.rollup(function(d){return d3.sum(d,function(v){return +v[selected_country];});})
-							.entries(x[1]["values"]);
-									
-				var	margin = {top:30, right:20, bottom: 60, left: 40},
+				var	margin = {top:30, right:100, bottom: 60, left: 30},
 					height = +svg_plot.attr("height") - margin.top - margin.bottom,
 					width = +svg_plot.attr("width") - margin.left - margin.right;
 				
@@ -309,7 +362,7 @@
 				g.append("g")
 					.attr("class","Xaxis")
 					.attr("transform","translate(0,"+height+")")
-					.call(d3.axisBottom(x).tickSize(-height))
+					.call(d3.axisBottom(x).ticks(5).tickSize(-height))
 					.selectAll("text")
 					.attr("x",0)
 					.attr("y",8)
@@ -317,26 +370,21 @@
 					.attr("transform","rotate(30)")
 					.style("text-anchor","start");
 				
-				g.selectAll(".tick line")
-					.attr("");
-
+				debugger;
 				g.append("g")
 					.attr("class","Yaxis")
-					.call(d3.axisLeft(y).ticks(8).tickSize(-width));
+					.call(d3.axisLeft(y).ticks(6).tickSize(-width));
 				
 				if(gender==null){
-					g.selectAll(".bar-female")
-						.data(acm_data)
-						.enter()
-						.append("rect")
-						.attr("class","bar-female")
-						.attr("x",function(d){return x(d["key"]);})
-						.attr("y",function(d){return y(+d["value"]);})
-						.attr("width",x.bandwidth())
-						.attr("height",function(d){return height - y(+d["value"]);});
-						
+					
+					y_perc = d3.scaleLinear().range([height,0]).domain([0,d3.max(perc_acm, function(d){return d;})]);
+					g.append("g")
+					.attr("class","Y2axis")
+					.attr("transform","translate(" + width +",0)")
+					.call(d3.axisRight(y_perc).ticks(6).tickSize(0).tickFormat(d3.format(".0%")));
+					
 					g.selectAll(".bar-male")
-						.data(female)
+						.data(acm_data)
 						.enter()
 						.append("rect")
 						.attr("class","bar-male")
@@ -345,7 +393,24 @@
 						.attr("width",x.bandwidth())
 						.attr("height",function(d){return height - y(+d["value"]);});
 						
+					g.selectAll(".bar-female")
+						.data(female)
+						.enter()
+						.append("rect")
+						.attr("class","bar-female")
+						.attr("x",function(d){return x(d["key"]);})
+						.attr("y",function(d){return y(+d["value"]);})
+						.attr("width",x.bandwidth())
+						.attr("height",function(d){return height - y(+d["value"]);});
+						
 				} else if (gender == "female"){
+					
+					var y_perc = d3.scaleLinear().range([height,0]).domain([0,d3.max(perc_female, function(d){return d;})]);
+					g.append("g")
+					.attr("class","Y2axis")
+					.attr("transform","translate(" + width+",0)")
+					.call(d3.axisRight(y_perc).ticks(6).tickSize(0).tickFormat(d3.format(".0%")));
+					
 					g.selectAll(".bar-female")
 						.data(female)
 						.enter()
@@ -356,6 +421,13 @@
 						.attr("width",x.bandwidth())
 						.attr("height",function(d){return height - y(+d["value"]);});
 				} else if (gender == "male"){
+					
+					var y_perc = d3.scaleLinear().range([height,0]).domain([0,d3.max(perc_male, function(d){return d;})]);
+					g.append("g")
+					.attr("class","Y2axis")
+					.attr("transform","translate(" + width+",0)")
+					.call(d3.axisRight(y_perc).ticks(6).tickSize(0).tickFormat(d3.format(".0%")));
+					
 					g.selectAll(".bar-male")
 						.data(male)
 						.enter()
@@ -373,24 +445,23 @@
 		
 	</head>
 	<body>
-		<h1 style="text-align:left;background-color:rgb(250,250,250);height:50px">Dados do PISA</h1>
-		
-		<div class="control-group" style="position:relative;left:51%;padding-bottom:10px">
-			<button class="button" onclick="draw_graphs(['d','female'],pisa)"> Female </button>
-			<button class="button" onclick="draw_graphs(['d','male'],pisa)"> Male </button>
-			<button class="button" onclick="draw_graphs(['d',null],pisa)"> All </button>
-		</div>
+		<h1 class="title">Dados do PISA</h1>
 		
 		<div class="container">
-			<div class="mapa">
-				<p class="country" style="float:left;color:rgb(250,250,250);text-align:right;margin-right:50px;font-size:30px;">Default</p>
+				<div class="mapa">
+					<p class="country" style="float:left;text-align:right;margin-right:50px;font-size:30px;">Brazil</p>
 				<script type="text/javascript">
 					d3.json("world_countries.json", draw);
-				 </script>
+				</script>
 			</div>
-			<div class="graph">
+
+			<div class="graph">	
+				<div class="control-group" style="left:51%;padding-bottom:20px">
+				<button class="button" onclick="draw_graphs(['d','female'],pisa)"> Female </button>
+				<button class="button" onclick="draw_graphs(['d','male'],pisa)"> Male </button>
+				<button class="button" onclick="draw_graphs(['d',null],pisa)"> All </button>
+				</div>
 			</div>
-			
 		</div>
 	</body>
 </html>
