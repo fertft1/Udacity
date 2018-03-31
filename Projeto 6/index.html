@@ -94,8 +94,9 @@
 		<script type="text/javascript">
 			
 			var selected_country, //Sempre inicia com Brazil
-				pisa = null,
-				count=null;
+				pisa = {},
+				count=null,
+				src;
 			
 			function draw(geo){
 				//alguns países são regiões segregadas
@@ -173,8 +174,13 @@
 						d3.select(".country").text(selecao.properties.name).style("color","steelblue");
 						//d3.selectAll(".svg_plot").remove();
 						
+						debugger;
 						selected_country = d.properties.name;
-						draw_graphs([1,null],pisa);
+						
+						//countt gender
+						debugger;
+						draw_graphs(["HISCED",1,null],pisa);
+						draw_graphs(["MISCED",1,null],pisa);
 					};
 				};
 				
@@ -187,156 +193,181 @@
 						return 'rgb(0,0,0)'; 
 					}
 				};
-								
-				d3.csv("MISCED2.csv",draw_graphs);
+				
+				d3.csv("HISCED.csv",draw_graphs);
+				d3.csv("MISCED.csv",draw_graphs);
+				
 			};
 			
 			function draw_graphs(param_in,data){
 				
-				debugger;
-				
 				if(param_in == null){
-					//na primeira chamada da função vai vir somente um null -- vem de d3.csv
-					//variable, count and flag
-					var param = ["MISCED", null, null];
+					
+					var variable = data["columns"][1];
+					var param = [variable, null, null, "svg-" + variable];
+				}else if(param_in[0] == 'd'){
+					
+					debugger;
+					var param = ['HISCED',1,param_in[1],'svg-HISCED'];
+					var x = plot(param, data);
+					
+					var param = ['MISCED',1,param_in[1],'svg-MISCED'];
+					var x = plot(param, data);
+					
+					return;
 					
 				}else{
 					
-					var param = ["MISCED", 1];
-					param.push(param_in[1]);
+					var param = [];
+					var variable = param_in[0];
+					param_in.forEach(function(d){param.push(d);});
+					param.push("svg-" + variable);
 					
 				};
 				
-				plot(param, data);
+				var x = plot(param, data);
+				
+				return;
 				
 			};
 			
 			function plot(param,data){	
-			
-					debugger;
 					
-					var variable = param[0],
-						count = param[1]
-						flag = param[2];
+				debugger;
+				
+				var dataset;
+				var variable = param[0],
+					count = param[1]
+					gender = param[2]
+					svg_class = param[3];
+				
+				if(selected_country==null){selected_country = 'Brazil';};
+				
+				if(count==null){
 					
-					if(selected_country==null){selected_country = 'Brazil';};
+					pisa[variable] = data;
+					dataset = pisa[variable];
 					
-					if(count==null){
-						pisa = data;
-						var svg_plot = d3.select(".graph")
-										.append("svg")
-											.attr("id","svg")
-											.attr("class","svg_plot")
-											.attr("width",400)
-											.attr("height",400);
-							
-							svg_plot.append("text")
-											.text("Educational level of mother (ISCED)")
-											.attr("x",10)
-											.attr("y",20);
-							
-					}else{
-						d3.selectAll(".svg_plot").remove();
-						var svg_plot = d3.select(".graph")
-										.append("svg")
-										.attr("class","svg_plot")
+					var svg_plot = d3.select(".graph")
+									.append("svg")
+										.attr("id","svg")
+										.attr("class",svg_class)
 										.attr("width",400)
 										.attr("height",400);
 						
 						svg_plot.append("text")
-											.text("Educational level of mother (ISCED)")
-											.attr("x",10)
-											.attr("y",20);
-					};
-					
-					//Dados acumulados
-					var acm_data = d3.nest().key(function(d){return d[variable];}).rollup(function(v){return d3.sum(v,function(h){return h[selected_country];})}).entries(pisa);
-					
-					//dados de base
-					var x = d3.nest().key(function(d){return d['ST04Q01']}).entries(pisa);
-					
-					var female = d3.nest()
-								.key(function(d){return d["MISCED"]})
-								.rollup(function(d){return d3.sum(d,function(v){return +v[selected_country];});})
-								.entries(x[0]["values"]);
-					
-					var male = d3.nest()
-								.key(function(d){return d["MISCED"]})
-								.rollup(function(d){return d3.sum(d,function(v){return +v[selected_country];});})
-								.entries(x[1]["values"]);
-										
-					var	margin = {top:30, right:20, bottom: 60, left: 40},
-						height = +svg_plot.attr("height") - margin.top - margin.bottom,
-						width = +svg_plot.attr("width") - margin.left - margin.right;
-					
-					var x = d3.scaleBand().range([0, width]).domain(acm_data.map(function(d){return d["key"];})).padding(0.5),
-						y = d3.scaleLinear().range([height,0]).domain([0,d3.max(acm_data, function(d){return d["value"];})]);
+										.text("Educational level of mother (ISCED)")
+										.attr("x",10)
+										.attr("y",20);
 						
-					var g = svg_plot.append("g").attr("transform","translate("+margin.left+","+margin.top+")");
+				}else{
 					
-					g.append("g")
-						.attr("class","Xaxis")
-						.attr("transform","translate(0,"+height+")")
-						.call(d3.axisBottom(x).tickSize(-height))
-						.selectAll("text")
-						.attr("x",0)
-						.attr("y",8)
-						.attr("dy","0.35em")
-						.attr("transform","rotate(30)")
-						.style("text-anchor","start");
+					dataset = pisa[variable];
 					
-					g.selectAll(".tick line")
-						.attr("");
-
-					g.append("g")
-						.attr("class","Yaxis")
-						.call(d3.axisLeft(y).ticks(8).tickSize(-width));
+					d3.selectAll("." + svg_class).remove();
+					var svg_plot = d3.select(".graph")
+									.append("svg")
+									.attr("class",svg_class)
+									.attr("width",400)
+									.attr("height",400);
 					
-					debugger;
-					if(flag==null){
-						g.selectAll(".bar-female")
-							.data(acm_data)
-							.enter()
-							.append("rect")
-							.attr("class","bar-female")
-							.attr("x",function(d){return x(d["key"]);})
-							.attr("y",function(d){return y(+d["value"]);})
-							.attr("width",x.bandwidth())
-							.attr("height",function(d){return height - y(+d["value"]);});
-							
-						g.selectAll(".bar-male")
-							.data(female)
-							.enter()
-							.append("rect")
-							.attr("class","bar-male")
-							.attr("x",function(d){return x(d["key"]);})
-							.attr("y",function(d){return y(+d["value"]);})
-							.attr("width",x.bandwidth())
-							.attr("height",function(d){return height - y(+d["value"]);});
-							
-					} else if (flag == "female"){
-						g.selectAll(".bar-female")
-							.data(female)
-							.enter()
-							.append("rect")
-							.attr("class","bar-female")
-							.attr("x",function(d){return x(d["key"]);})
-							.attr("y",function(d){return y(+d["value"]);})
-							.attr("width",x.bandwidth())
-							.attr("height",function(d){return height - y(+d["value"]);});
-					} else if (flag == "male"){
-						g.selectAll(".bar-male")
-							.data(male)
-							.enter()
-							.append("rect")
-							.attr("class","bar-male")
-							.attr("x",function(d){return x(d["key"]);})
-							.attr("y",function(d){return y(+d["value"]);})
-							.attr("width",x.bandwidth())
-							.attr("height",function(d){return height - y(+d["value"]);});
-					}
-					
+					svg_plot.append("text")
+										.text("Educational level of mother (ISCED)")
+										.attr("x",10)
+										.attr("y",20);
 				};
+				
+				debugger
+				
+				
+				
+				//Dados acumulados
+				var acm_data = d3.nest().key(function(d){return d[variable];}).rollup(function(v){return d3.sum(v,function(h){return h[selected_country];})}).entries(dataset);
+				
+				//dados de base
+				var x = d3.nest().key(function(d){return d['ST04Q01']}).entries(dataset);
+				
+				var female = d3.nest()
+							.key(function(d){return d[variable]})
+							.rollup(function(d){return d3.sum(d,function(v){return +v[selected_country];});})
+							.entries(x[0]["values"]);
+				
+				var male = d3.nest()
+							.key(function(d){return d[variable]})
+							.rollup(function(d){return d3.sum(d,function(v){return +v[selected_country];});})
+							.entries(x[1]["values"]);
+									
+				var	margin = {top:30, right:20, bottom: 60, left: 40},
+					height = +svg_plot.attr("height") - margin.top - margin.bottom,
+					width = +svg_plot.attr("width") - margin.left - margin.right;
+				
+				var x = d3.scaleBand().range([0, width]).domain(acm_data.map(function(d){return d["key"];})).padding(0.5),
+					y = d3.scaleLinear().range([height,0]).domain([0,d3.max(acm_data, function(d){return d["value"];})]);
+					
+				var g = svg_plot.append("g").attr("transform","translate("+margin.left+","+margin.top+")");
+				
+				g.append("g")
+					.attr("class","Xaxis")
+					.attr("transform","translate(0,"+height+")")
+					.call(d3.axisBottom(x).tickSize(-height))
+					.selectAll("text")
+					.attr("x",0)
+					.attr("y",8)
+					.attr("dy","0.35em")
+					.attr("transform","rotate(30)")
+					.style("text-anchor","start");
+				
+				g.selectAll(".tick line")
+					.attr("");
+
+				g.append("g")
+					.attr("class","Yaxis")
+					.call(d3.axisLeft(y).ticks(8).tickSize(-width));
+				
+				if(gender==null){
+					g.selectAll(".bar-female")
+						.data(acm_data)
+						.enter()
+						.append("rect")
+						.attr("class","bar-female")
+						.attr("x",function(d){return x(d["key"]);})
+						.attr("y",function(d){return y(+d["value"]);})
+						.attr("width",x.bandwidth())
+						.attr("height",function(d){return height - y(+d["value"]);});
+						
+					g.selectAll(".bar-male")
+						.data(female)
+						.enter()
+						.append("rect")
+						.attr("class","bar-male")
+						.attr("x",function(d){return x(d["key"]);})
+						.attr("y",function(d){return y(+d["value"]);})
+						.attr("width",x.bandwidth())
+						.attr("height",function(d){return height - y(+d["value"]);});
+						
+				} else if (gender == "female"){
+					g.selectAll(".bar-female")
+						.data(female)
+						.enter()
+						.append("rect")
+						.attr("class","bar-female")
+						.attr("x",function(d){return x(d["key"]);})
+						.attr("y",function(d){return y(+d["value"]);})
+						.attr("width",x.bandwidth())
+						.attr("height",function(d){return height - y(+d["value"]);});
+				} else if (gender == "male"){
+					g.selectAll(".bar-male")
+						.data(male)
+						.enter()
+						.append("rect")
+						.attr("class","bar-male")
+						.attr("x",function(d){return x(d["key"]);})
+						.attr("y",function(d){return y(+d["value"]);})
+						.attr("width",x.bandwidth())
+						.attr("height",function(d){return height - y(+d["value"]);});
+				}
+				return 1;
+			};
 			
 		</script>
 		
@@ -345,9 +376,9 @@
 		<h1 style="text-align:left;background-color:rgb(250,250,250);height:50px">Dados do PISA</h1>
 		
 		<div class="control-group" style="position:relative;left:51%;padding-bottom:10px">
-			<button class="button" onclick="draw_graphs([1,'female'],pisa)"> Female </button>
-			<button class="button" onclick="draw_graphs([1,'male'],pisa)"> Male </button>
-			<button class="button" onclick="draw_graphs([1,null],pisa)"> Clear </button>
+			<button class="button" onclick="draw_graphs(['d','female'],pisa)"> Female </button>
+			<button class="button" onclick="draw_graphs(['d','male'],pisa)"> Male </button>
+			<button class="button" onclick="draw_graphs(['d',null],pisa)"> All </button>
 		</div>
 		
 		<div class="container">
