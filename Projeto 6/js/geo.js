@@ -13,7 +13,7 @@ function draw(geo){
 		selecao = "",
 		gender = "None";
 	
-	//d3.select("body").append("h2").text("Selecione um país que realizou a avaliação");
+	debugger;
 	
 	//criando o objeto svg e passando seus atributos
 	var svg = d3.select(".mapa")
@@ -103,6 +103,6 @@ function draw(geo){
 		}
 	};
 	
-	src.forEach(function(d){d3.csv(d,draw_graphs);});
+	src.forEach(function(d){d3.csv("dados/" + d,draw_graphs);});
 	
 };
