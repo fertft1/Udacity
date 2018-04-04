@@ -100,7 +100,6 @@
 				var x = plot(param, data);
 				return;				
 			};
-
 				
 			function plot(param,data){	
 				
@@ -282,34 +281,32 @@
 	</head>
 	<body>
 		<h1 class="title">Dados do PISA</h1>
-			<div style="float:left;height:1200px;width:48%;text-align:right;margin-left:5px;font-size:30px;">
-				<div class="mapa">
-				
-					<p class="country" style="margin-left:5px;">Brazil</p>
-					
-					<script type="text/javascript">
-						debugger;
-						d3.json("dados/world_countries.json", draw);
-					</script>
-				</div>
-				
-				<div class='selectors' style:"margin-left:50px;">
-					<div class='selector-div-1'>		
-						<select class="selector-1" style="height:225px" multiple></select>
-						<script type="text/javascript">
-							selectors(src);
-						</script>
-					</div>
-				</div>
+		
+		<div class='selectors'>
+			<div class='selector-div-1'>		
+				<select class="selector-1" style="height:225px" multiple></select>
+				<script type="text/javascript">
+					selectors(src);
+				</script>
 			</div>
-			
-			<div class="graph" style="float:center">	
+		</div>
+		
+		<div class="container">
+				<div class="mapa">
+					<p class="country" style="float:left;text-align:right;margin-right:50px;font-size:30px;">Brazil</p>
+				<script type="text/javascript">
+				debugger;
+					d3.json("dados/world_countries.json", draw);
+				</script>
+			</div>
+
+			<div class="graph">	
 				<div class="control-group" style="left:51%;padding-bottom:20px">
 				<button class="button" onclick="draw_graphs(['d','female'],pisa)"> Female </button>
 				<button class="button" onclick="draw_graphs(['d','male'],pisa)"> Male </button>
 				<button class="button" onclick="draw_graphs(['d',null],pisa)"> All </button>
 				</div>
 			</div>
-			
+		</div>
 	</body>
 </html>
