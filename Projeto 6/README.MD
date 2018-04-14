@@ -12,11 +12,20 @@ To visualize:
 
 	4. Open the browser in localhost like the video of the example
 
+Resumo:
+The visualization encourage the user to analyse many variables of the PISA grouped by gender and country. There is 400 variables available to analyse with use of bar plots.
+It's possible compare the performance of the countries wich partipate(and non-participate) of the PISA in each variable and group by gender. 
+	
+Design escolhido:
+1. Cores escuras foram utilizadas por serem mais confortável para o olho humano
+2. Cores escuras ajudam a perceber mudanças nos valores
+3. As variáveis são categóricas o que justifica o uso de bar chart para toda as variáveis
+4. A posição do mapa, gráficos e barra de seleção foram modificadas várias vezes durante o projeto para o layout final
+5. A quantidade de gráfico foi limitada a 4 gráficos para facilicar a visualização a estimular a interação como mapa e gráficos
+6. A página foi evoluindo para fornecer as informações iniciais para explicar do que se trata a página e as interações que o usuário pode fazer
+	
 The page is a interactive map and graphs about data gathering in Programme for International Student Assessment (PISA).
 You can check informatio about PISA at http://www.oecd.org/pisa/.
-
-The visualization encourage the user to analyse many variables of the PISA grouped by gender and country. There is 400 variables available to analyse with use of bar plots.
-It's possible compare the performance of the countries wich partipate of the PISA in each variable and group by gender.
 
 Feedbacks-- Abaixo os feedbacks recebidos e em seguida as modificações que foram implementadas:
 1. There is a problem, though. Your README does not say what I have to do to see your visualization. What steps should I follow to generate the viz?
