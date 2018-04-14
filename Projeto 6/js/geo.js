@@ -1,3 +1,4 @@
+/*O código cuida da criação, atualização e interação do usuário com o mapa*/
 function draw(geo){
 	//alguns países são regiões segregadas
 	countries_pisa = ["Albania","United Arab Emirates","Argentina","Australia","Austria","Belgium","Bulgaria","Brazil","Canada","Switzerland","Chile","Colombia","Costa Rica","Czech Republic","Germany","Denmark",
@@ -7,43 +8,34 @@ function draw(geo){
 						"Sweden","Chinese Taipei","Thailand","Tunisia","Turkey","Uruguay","Vietnam"];
 
 	//Area do SVG
-	var margin = -600,
-		width = 1000 - margin,
-		height = 600 - margin,
+	var margin = 10,
+		width = 900,
+		height = 850,
 		selecao = "",
 		gender = "None";
-	
-	debugger;
-	
-	//criando o objeto svg e passando seus atributos
-	var svg = d3.select(".mapa")
-				.append("svg")
-				.attr("width",1000)
-				.attr("height",600)
-				.append("g").attr("class","map");
-	
+		
 	//projeção -- passando latitude e longitude temos de converter para pixels
 	//scale is similar to google maps zoom
 	//translate is change the center of the map
-	var projection = d3.geoMercator().scale(140).translate([width/3, height/3]);
+	var projection = d3.geoMercator().scale(120).translate([width/2, height/2.3]);
 	
 	//Para criar o SVG precisamos das coordenadas dos polígonos -- passamos os polígonos por path e a projeção que queremos utilizar para desenhar os pixels no SVG
 	//recebe os dados e aplica a projeção para renderizar a página
 	//path é uma função
 	var path = d3.geoPath().projection(projection);
 	
-	//agora juntamos os dados + polígonos com a projeção que escolhemos
-	//geo.features é o vetor das coordenadas
-	//.data(geo.features)é um vetor de espaços reservados
-	//.enter() para selecionar todos os "paths" que não estão na página
-	//.attr("d",path) -- acrescentamos o caminho ao nosso SVG que tem a propriedade d definida acima
-	/*.data(geo.features).attr("class", function(d){return d.properties.name}) -- crio uma classe que representa cada país e na hora de mudar
-		as cores vai ficar mais simples -- d3.selectAll(".Austria").style("fill",'red'); para selecionar as classes*/
+	//criando o objeto svg e passando seus atributos			
+	var svg = d3.select(".mapa")
+				.append("svg")
+				.attr("viewBox","0 0 " + width + " " + height);
+				
+	var g = svg.append("g").attr("class","map");
 	
 	var map = svg.selectAll("path")
 				.data(geo.features)
 				.enter()
 				.append("path")
+				.filter(function(d){if(d.properties.name !='Antarctica'){return true;};})
 				.attr("d",path)
 				.attr("class", function(d){return d.properties.name})
 				.style("fill",countries_startcolor)
@@ -51,32 +43,48 @@ function draw(geo){
 				.style("stroke-width",1)
 				.on("click", country_select);
 				
+				//adicionando legendas do SVG
 				var legend = svg;
 				legend.append("rect").attr("x",5).attr("y",1).attr("width",200).attr("height",60).attr("fill","none").style("stroke","white");
 				
 				legend.append("rect").attr("x",10).attr("y",15).attr("width",10).attr("height",10).attr("fill","rgb(200,200,200)");
-				legend.append("text").html("PISA").attr("fill","darkblue").attr("dx","2em").attr("y",25);
+				legend.append("text").html("Participates of PISA").attr("fill","darkblue").attr("dx","2em").attr("y",25);
 				
 				legend.append("rect").attr("x",10).attr("y",40).attr("width",10).attr("height",10).attr("fill","rgb(0,0,0)");
-				legend.append("text").html("Non-PISA").attr("fill","darkblue").attr("dx","2em").attr("dy",50);
+				legend.append("text").html("Non-Participates(no data)").attr("fill","darkblue").attr("dx","2em").attr("dy",50);
+				
+				var legend_2 = svg;
+				legend_2.append("text").attr("x",width-400).attr("class","selected-country").attr("fill","darkblue").attr("y",35);
 				
 	function country_select(d,i){
+		/*Quando um país é selecionado a função faz as atualizações necessárias -- cor e informações nos gráficos*/
 		
 		if(countries_pisa.includes(d.properties.name)){
 			
-			if(selecao!=""){
-				d3.select("."+selecao.properties.name).style("fill",countries_startcolor(d));
+			//selecao antiga
+			d3.select('.'+selected_country).style('fill','rgb(200,200,200)');
+			
+			var subregions = special_cases[d.properties.name];
+			d3.selectAll('.button-aux').remove();
+			
+			if( subregions != null){
+				debugger;
+				subregions.forEach(
+					function(d){
+						d3.selectAll('.control-group').append('button').attr('class','button-aux').attr("onclick","subregion("+"'" +d+"'" + ")").html(d);
+					}
+				);
 			};
-				
+			
 			selecao = d; //guardo a selecao
+			d3.selectAll(".selected-country").html(selecao.properties.name).style('font-size',30);
 			
 			d3.select(this).style("fill",'darkblue');
 			d3.select(".country").text(selecao.properties.name).style("color","steelblue");
-			//d3.selectAll(".svg_plot").remove();
 			
 			selected_country = d.properties.name;
 			
-			debugger;
+			//atualização dos gráficos 
 			if(current_graph==null){
 				src.forEach(
 					function(d){
@@ -90,10 +98,13 @@ function draw(geo){
 					}
 				);
 			};
-		};
+		
+		}else{alert('This country not participate of PISA, there is not a dataset available');};
 	};
 	
 	function countries_startcolor(d){
+		//atualiza as cores
+		
 		//cores inicias para diferenciar quem participa do pisa e não participa
 		if(countries_pisa.includes(d.properties.name)){
 			return 'rgb(200,200,200)'; 
