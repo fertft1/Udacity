@@ -1,3 +1,9 @@
+.legend-female{
+	width = 10;
+	height = 10;
+	x = 0px;
+	y = 0px;
+}
 .line{
 	width:100%;
 	height:1px;
@@ -38,6 +44,7 @@
 	margin-top:2px;
 	background-color:rgb(245,245,245);
 	height:700;
+	width:90%;
 }
 .tick line{
 	stroke: lightgrey;
@@ -52,10 +59,10 @@
 	fill:darkgreen;
 }
 .bar-female{
-	fill:black;
+	fill:#ffbdbd;
 }
 .bar-male{
-	fill:gray;
+	fill:#f79a43;
 }
 .button{
 	display: inline-block;
